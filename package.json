@@ -9,19 +9,29 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@empcon/types": "^1.0.0",
+    "@hookform/resolvers": "^5.2.1",
+    "@reduxjs/toolkit": "^2.8.2",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.540.0",
+    "next": "15.5.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "next": "15.5.0"
+    "react-hook-form": "^7.62.0",
+    "react-redux": "^9.2.0",
+    "recharts": "^3.1.2",
+    "redux-persist": "^6.0.0",
+    "zod": "^4.0.17"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.5.0",
-    "@eslint/eslintrc": "^3"
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }
