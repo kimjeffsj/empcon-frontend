@@ -51,9 +51,10 @@ export function EmployeeForm({
   availableManagers = [],
 }: EmployeeFormProps) {
   const { hasRole } = useAuth();
-  
+
   // Check if user can edit SIN (ADMIN and MANAGER only)
   const canEditSIN = hasRole(["ADMIN", "MANAGER"]);
+
   const form = useForm<EmployeeFormData>({
     resolver: zodResolver(employeeFormSchema),
     defaultValues: {
@@ -90,24 +91,39 @@ export function EmployeeForm({
         sin: "[REDACTED]",
         formErrors: form.formState.errors,
         isValid: form.formState.isValid,
-        isDirty: form.formState.isDirty
+        isDirty: form.formState.isDirty,
       });
+
+      // Handle role field based on user permissions and mode
+      let submitData = { ...data };
       
+      if (mode === "edit" && !hasRole(["ADMIN"])) {
+        // For edit mode: exclude role field if user is not ADMIN
+        const { role, ...dataWithoutRole } = submitData;
+        submitData = dataWithoutRole as EmployeeFormData;
+      } else if (mode === "create" && hasRole(["MANAGER"]) && !hasRole(["ADMIN"])) {
+        // For create mode: MANAGER can only create EMPLOYEE role
+        submitData.role = "EMPLOYEE";
+      }
+
       // Log validation state
       const validationResult = employeeFormSchema.safeParse(data);
       if (!validationResult.success) {
-        console.error("❌ [EmployeeForm] Client-side validation failed:", validationResult.error.issues);
+        console.error(
+          "❌ [EmployeeForm] Client-side validation failed:",
+          validationResult.error.issues
+        );
         return;
       }
       console.log("✅ [EmployeeForm] Client-side validation passed");
-      
-      await onSubmit(data);
+
+      await onSubmit(submitData);
       console.log("✅ [EmployeeForm] Form submission completed successfully");
     } catch (error) {
       console.error("❌ [EmployeeForm] Form submission failed:", {
         error,
-        errorMessage: error instanceof Error ? error.message : 'Unknown error',
-        formData: { ...data, sin: "[REDACTED]" }
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+        formData: { ...data, sin: "[REDACTED]" },
       });
     }
   };
@@ -225,10 +241,10 @@ export function EmployeeForm({
                       <FormItem>
                         <FormLabel>SIN *</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="123-456-789" 
+                          <Input
+                            placeholder="123-456-789"
                             disabled={!canEditSIN}
-                            {...field} 
+                            {...field}
                           />
                         </FormControl>
                         {!canEditSIN && (
