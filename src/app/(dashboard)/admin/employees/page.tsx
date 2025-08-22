@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EmployeeForm } from "@/components/forms/EmployeeForm";
-import { Plus, Edit, Trash2, Search, Eye, EyeOff } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Eye, EyeOff, Users, Mail, Phone } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -36,7 +36,10 @@ import type { EmployeeFormData } from "@/lib/validations/employee";
 export default function EmployeesPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] =
+    useState<EmployeeResponse | null>(null);
+  const [viewingEmployee, setViewingEmployee] =
     useState<EmployeeResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -156,6 +159,11 @@ export default function EmployeesPage() {
     setIsEditDialogOpen(true);
   };
 
+  const openDetailDialog = (employee: EmployeeResponse) => {
+    setViewingEmployee(employee);
+    setIsDetailDialogOpen(true);
+  };
+
   const toggleSinVisibility = (employeeId: string) => {
     setShowSinVisibility((prev) => ({
       ...prev,
@@ -227,16 +235,19 @@ export default function EmployeesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Employees</h1>
-          <p className="text-muted-foreground">
-            Manage employee information and records.
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Users className="h-8 w-8" />
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Employee Management</h1>
+            <p className="text-muted-foreground">
+              Manage and view employee information.
+            </p>
+          </div>
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button className="bg-black hover:bg-black/90 text-white">
               <Plus className="mr-2 h-4 w-4" />
               Add Employee
             </Button>
@@ -257,40 +268,22 @@ export default function EmployeesPage() {
         </Dialog>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="relative">
+      {/* Search and Filters */}
+      <Card className="bg-gray-50/50">
+        <CardContent className="pt-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search employees..."
+                placeholder="Search by name, email, or department..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-white"
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="ACTIVE">Active</SelectItem>
-                <SelectItem value="INACTIVE">Inactive</SelectItem>
-                <SelectItem value="ON_LEAVE">On Leave</SelectItem>
-                <SelectItem value="TERMINATED">Terminated</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select
-              value={departmentFilter}
-              onValueChange={setDepartmentFilter}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All Departments" />
+            <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+              <SelectTrigger className="w-full sm:w-[200px] bg-white">
+                <SelectValue placeholder="Department" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Departments</SelectItem>
@@ -301,42 +294,44 @@ export default function EmployeesPage() {
                 ))}
               </SelectContent>
             </Select>
-            <div className="text-sm text-muted-foreground flex items-center">
-              Showing {filteredEmployees.length} of {employees.length} employees
-            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-[150px] bg-white">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="ACTIVE">Active</SelectItem>
+                <SelectItem value="INACTIVE">Inactive</SelectItem>
+                <SelectItem value="ON_LEAVE">On Leave</SelectItem>
+                <SelectItem value="TERMINATED">Terminated</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
 
-      {/* Employee Table */}
+      {/* Employee List */}
       <Card>
         <CardHeader>
-          <CardTitle>Employee Directory</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            Employee List ({filteredEmployees.length} employees)
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Employee #</TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Department</TableHead>
-                <TableHead>Position</TableHead>
+                <TableHead>Contact</TableHead>
+                <TableHead>Department/Position</TableHead>
+                <TableHead>Hire Date</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Pay Type</TableHead>
-                <TableHead>SIN</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredEmployees.map((employee) => (
-                <TableRow key={employee.id}>
-                  <TableCell className="font-mono text-sm">
-                    {employee.employeeNumber || 
-                      <Badge variant="outline">Not Assigned</Badge>
-                    }
-                  </TableCell>
+                <TableRow key={employee.id} className="cursor-pointer hover:bg-gray-50" onClick={() => openDetailDialog(employee)}>
                   <TableCell>
                     <div>
                       <div className="font-medium">
@@ -347,93 +342,65 @@ export default function EmployeesPage() {
                           </span>
                         }
                       </div>
-                      {employee.middleName && (
-                        <div className="text-sm text-muted-foreground">
-                          {employee.middleName}
+                      <div className="text-sm text-muted-foreground">
+                        {employee.user?.email || employee.email}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Mail className="h-3 w-3 text-muted-foreground" />
+                        {employee.user?.email || employee.email}
+                      </div>
+                      {employee.phone && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Phone className="h-3 w-3 text-muted-foreground" />
+                          {employee.phone}
                         </div>
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>{employee.email}</TableCell>
                   <TableCell>
-                    <Badge variant={
-                      employee.user?.role === 'ADMIN' ? 'destructive' :
-                      employee.user?.role === 'MANAGER' ? 'default' : 'secondary'
-                    }>
-                      {employee.user?.role || 'Unknown'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {employee.department ? (
-                      <Badge variant="outline">
-                        {employee.department.name}
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary">Unassigned</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {employee.position ? (
-                      <span className="text-sm">{employee.position.title}</span>
-                    ) : (
-                      <Badge variant="secondary">Unassigned</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusBadgeColor(employee.status)}>
-                      {employee.status.replace("_", " ")}
-                    </Badge>
+                    <div>
+                      <div className="font-medium">
+                        {employee.department?.name || 'Unassigned'}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {employee.position?.title || 'No Position'}
+                      </div>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">
-                      <div>{employee.payType || 'Not Set'}</div>
-                      {employee.payRate > 0 && (
-                        <div className="text-muted-foreground">
-                          {employee.payType === "HOURLY"
-                            ? `$${employee.payRate}/hr`
-                            : `$${employee.payRate.toLocaleString()}/yr`}
-                        </div>
-                      )}
+                      {employee.hireDate ? new Date(employee.hireDate).toLocaleDateString() : 'Not Set'}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm">
-                        {employee.sin
-                          ? showSinVisibility[employee.id]
-                            ? employee.sin
-                            : "***-***-***"
-                          : "N/A"}
-                      </span>
-                      {employee.sin && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleSinVisibility(employee.id)}
-                          className="h-6 w-6 p-0"
-                        >
-                          {showSinVisibility[employee.id] ? (
-                            <EyeOff className="h-3 w-3" />
-                          ) : (
-                            <Eye className="h-3 w-3" />
-                          )}
-                        </Button>
-                      )}
-                    </div>
+                    <Badge variant={getStatusBadgeColor(employee.status)}>
+                      {employee.status === 'ON_LEAVE' ? 'On Leave' : 
+                       employee.status === 'ACTIVE' ? 'Active' : employee.status}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => openEditDialog(employee)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditDialog(employee);
+                        }}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDeleteEmployee(employee.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteEmployee(employee.id);
+                        }}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -445,6 +412,117 @@ export default function EmployeesPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Detail Dialog */}
+      <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Employee Details</DialogTitle>
+          </DialogHeader>
+          {viewingEmployee && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground">Full Name</h3>
+                  <p className="font-medium">
+                    {viewingEmployee.firstName || viewingEmployee.lastName ? 
+                      `${viewingEmployee.firstName} ${viewingEmployee.lastName}`.trim() :
+                      viewingEmployee.user?.email.split('@')[0] || 'Unknown User'
+                    }
+                  </p>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground">Employee #</h3>
+                  <p className="font-mono">{viewingEmployee.employeeNumber || 'Not Assigned'}</p>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground">Email</h3>
+                  <p>{viewingEmployee.user?.email || viewingEmployee.email}</p>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground">Phone</h3>
+                  <p>{viewingEmployee.phone || 'Not provided'}</p>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground">Department</h3>
+                  <p>{viewingEmployee.department?.name || 'Unassigned'}</p>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground">Position</h3>
+                  <p>{viewingEmployee.position?.title || 'No Position'}</p>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground">Status</h3>
+                  <Badge variant={getStatusBadgeColor(viewingEmployee.status)}>
+                    {viewingEmployee.status === 'ON_LEAVE' ? 'On Leave' : 
+                     viewingEmployee.status === 'ACTIVE' ? 'Active' : viewingEmployee.status}
+                  </Badge>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground">Hire Date</h3>
+                  <p>{viewingEmployee.hireDate ? new Date(viewingEmployee.hireDate).toLocaleDateString() : 'Not Set'}</p>
+                </div>
+                {viewingEmployee.payRate > 0 && (
+                  <>
+                    <div>
+                      <h3 className="font-semibold text-sm text-muted-foreground">Pay Type</h3>
+                      <p>{viewingEmployee.payType}</p>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-sm text-muted-foreground">Pay Rate</h3>
+                      <p>
+                        {viewingEmployee.payType === "HOURLY"
+                          ? `$${viewingEmployee.payRate}/hr`
+                          : `$${viewingEmployee.payRate.toLocaleString()}/yr`}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {viewingEmployee.addressLine1 && (
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground mb-2">Address</h3>
+                  <div className="text-sm space-y-1">
+                    <p>{viewingEmployee.addressLine1}</p>
+                    {viewingEmployee.addressLine2 && <p>{viewingEmployee.addressLine2}</p>}
+                    <p>{viewingEmployee.city}, {viewingEmployee.province} {viewingEmployee.postalCode}</p>
+                  </div>
+                </div>
+              )}
+
+              {(viewingEmployee.emergencyContactName || viewingEmployee.emergencyContactPhone) && (
+                <div>
+                  <h3 className="font-semibold text-sm text-muted-foreground mb-2">Emergency Contact</h3>
+                  <div className="space-y-1">
+                    {viewingEmployee.emergencyContactName && <p>Name: {viewingEmployee.emergencyContactName}</p>}
+                    {viewingEmployee.emergencyContactPhone && <p>Phone: {viewingEmployee.emergencyContactPhone}</p>}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsDetailDialogOpen(false);
+                    openEditDialog(viewingEmployee);
+                  }}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsDetailDialogOpen(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
