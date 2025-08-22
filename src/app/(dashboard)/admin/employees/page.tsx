@@ -86,8 +86,8 @@ export default function EmployeesPage() {
         )
         .map((emp) => ({
           id: emp.id,
-          firstName: emp.firstName,
-          lastName: emp.lastName,
+          firstName: emp.firstName || emp.user?.email.split('@')[0] || 'Unknown',
+          lastName: emp.lastName || '',
         }));
       setManagers(managerEmployees);
     } catch (error) {
@@ -320,12 +320,12 @@ export default function EmployeesPage() {
                 <TableHead>Employee #</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
+                <TableHead>Role</TableHead>
                 <TableHead>Department</TableHead>
                 <TableHead>Position</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Pay Type</TableHead>
                 <TableHead>SIN</TableHead>
-                <TableHead>Manager</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -333,12 +333,19 @@ export default function EmployeesPage() {
               {filteredEmployees.map((employee) => (
                 <TableRow key={employee.id}>
                   <TableCell className="font-mono text-sm">
-                    {employee.employeeNumber}
+                    {employee.employeeNumber || 
+                      <Badge variant="outline">Not Assigned</Badge>
+                    }
                   </TableCell>
                   <TableCell>
                     <div>
                       <div className="font-medium">
-                        {employee.firstName} {employee.lastName}
+                        {employee.firstName || employee.lastName ? 
+                          `${employee.firstName} ${employee.lastName}`.trim() :
+                          <span className="text-muted-foreground">
+                            {employee.user?.email.split('@')[0] || 'Unknown User'}
+                          </span>
+                        }
                       </div>
                       {employee.middleName && (
                         <div className="text-sm text-muted-foreground">
@@ -348,6 +355,14 @@ export default function EmployeesPage() {
                     </div>
                   </TableCell>
                   <TableCell>{employee.email}</TableCell>
+                  <TableCell>
+                    <Badge variant={
+                      employee.user?.role === 'ADMIN' ? 'destructive' :
+                      employee.user?.role === 'MANAGER' ? 'default' : 'secondary'
+                    }>
+                      {employee.user?.role || 'Unknown'}
+                    </Badge>
+                  </TableCell>
                   <TableCell>
                     {employee.department ? (
                       <Badge variant="outline">
@@ -371,12 +386,14 @@ export default function EmployeesPage() {
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">
-                      <div>{employee.payType}</div>
-                      <div className="text-muted-foreground">
-                        {employee.payType === "HOURLY"
-                          ? `$${employee.payRate}/hr`
-                          : `$${employee.payRate.toLocaleString()}/yr`}
-                      </div>
+                      <div>{employee.payType || 'Not Set'}</div>
+                      {employee.payRate > 0 && (
+                        <div className="text-muted-foreground">
+                          {employee.payType === "HOURLY"
+                            ? `$${employee.payRate}/hr`
+                            : `$${employee.payRate.toLocaleString()}/yr`}
+                        </div>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -403,15 +420,6 @@ export default function EmployeesPage() {
                         </Button>
                       )}
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    {employee.manager ? (
-                      <span className="text-sm">
-                        {employee.manager.firstName} {employee.manager.lastName}
-                      </span>
-                    ) : (
-                      <Badge variant="secondary">No Manager</Badge>
-                    )}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">

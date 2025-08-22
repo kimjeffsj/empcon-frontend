@@ -71,6 +71,7 @@ export function EmployeeForm({
       hireDate: "",
       payRate: 0,
       payType: "HOURLY",
+      role: "EMPLOYEE",
       departmentId: "",
       positionId: "",
       managerId: "",
@@ -348,7 +349,7 @@ export function EmployeeForm({
               {/* Employment Information Section */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Employment Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
                     name="hireDate"
@@ -386,6 +387,32 @@ export function EmployeeForm({
                       </FormItem>
                     )}
                   />
+                  {hasRole(["ADMIN"]) && (
+                    <FormField
+                      control={form.control}
+                      name="role"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Role *</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select role" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="EMPLOYEE">Employee</SelectItem>
+                              <SelectItem value="MANAGER">Manager</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

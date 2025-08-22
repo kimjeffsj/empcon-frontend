@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { UserRole } from "@empcon/types";
 
 // Employee form validation schema
 export const employeeFormSchema = z.object({
@@ -49,6 +50,9 @@ export const employeeFormSchema = z.object({
   payType: z.enum(["HOURLY", "SALARY"], {
     message: "Pay type is required",
   }),
+  role: z.enum(["MANAGER", "EMPLOYEE"], {
+    message: "Role is required",
+  }).optional(),
   departmentId: z.string().min(1, "Department is required"),
   positionId: z.string().min(1, "Position is required"),
   managerId: z.string().optional(),
