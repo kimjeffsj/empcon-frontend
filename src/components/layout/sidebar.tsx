@@ -18,7 +18,9 @@ import {
   ChevronLeft, 
   ChevronRight,
   LogOut,
-  User
+  User,
+  Building2,
+  Briefcase
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { UserRole } from "@empcon/types";
@@ -45,10 +47,22 @@ const menuItems: MenuItem[] = [
     id: "employees",
     label: "Employees",
     icon: <Users className="h-4 w-4" />,
-    href: "/employees",
-    roles: ["ADMIN", "MANAGER"],
-    disabled: true,
-    badge: "Phase 2"
+    href: "/admin/employees",
+    roles: ["ADMIN", "MANAGER"]
+  },
+  {
+    id: "departments",
+    label: "Departments",
+    icon: <Building2 className="h-4 w-4" />,
+    href: "/admin/departments",
+    roles: ["ADMIN"]
+  },
+  {
+    id: "positions",
+    label: "Positions",
+    icon: <Briefcase className="h-4 w-4" />,
+    href: "/admin/positions",
+    roles: ["ADMIN"]
   },
   {
     id: "schedules",
@@ -132,8 +146,7 @@ export function Sidebar({ className }: SidebarProps) {
     if (item.disabled) {
       return;
     }
-    // Navigation will be implemented when routes are ready
-    console.log(`Navigate to ${item.href}`);
+    window.location.href = item.href;
   };
 
   return (

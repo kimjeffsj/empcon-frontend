@@ -21,13 +21,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { employeeFormSchema, type EmployeeFormData } from "@/lib/validations/employee";
+import {
+  employeeFormSchema,
+  type EmployeeFormData,
+} from "@/lib/validations/employee";
+import { useAuth } from "@/lib/auth-context";
 
 interface EmployeeFormProps {
   initialData?: Partial<EmployeeFormData>;
   onSubmit: (data: EmployeeFormData) => Promise<void>;
   isLoading?: boolean;
   mode?: "create" | "edit";
+  availableDepartments?: Array<{ id: string; name: string }>;
+  availablePositions?: Array<{ id: string; title: string }>;
+  availableManagers?: Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+  }>;
 }
 
 export function EmployeeForm({
@@ -35,7 +46,14 @@ export function EmployeeForm({
   onSubmit,
   isLoading = false,
   mode = "create",
+  availableDepartments = [],
+  availablePositions = [],
+  availableManagers = [],
 }: EmployeeFormProps) {
+  const { hasRole } = useAuth();
+  
+  // Check if user can edit SIN (ADMIN and MANAGER only)
+  const canEditSIN = hasRole(["ADMIN", "MANAGER"]);
   const form = useForm<EmployeeFormData>({
     resolver: zodResolver(employeeFormSchema),
     defaultValues: {
@@ -66,9 +84,30 @@ export function EmployeeForm({
 
   const handleSubmit = async (data: EmployeeFormData) => {
     try {
+      console.log("🚀 [EmployeeForm] Form submission started with data:", {
+        ...data,
+        sin: "[REDACTED]",
+        formErrors: form.formState.errors,
+        isValid: form.formState.isValid,
+        isDirty: form.formState.isDirty
+      });
+      
+      // Log validation state
+      const validationResult = employeeFormSchema.safeParse(data);
+      if (!validationResult.success) {
+        console.error("❌ [EmployeeForm] Client-side validation failed:", validationResult.error.issues);
+        return;
+      }
+      console.log("✅ [EmployeeForm] Client-side validation passed");
+      
       await onSubmit(data);
+      console.log("✅ [EmployeeForm] Form submission completed successfully");
     } catch (error) {
-      console.error("Error submitting employee form:", error);
+      console.error("❌ [EmployeeForm] Form submission failed:", {
+        error,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        formData: { ...data, sin: "[REDACTED]" }
+      });
     }
   };
 
@@ -82,7 +121,10 @@ export function EmployeeForm({
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <form
+              onSubmit={form.handleSubmit(handleSubmit)}
+              className="space-y-6"
+            >
               {/* Personal Information Section */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Personal Information</h3>
@@ -136,7 +178,11 @@ export function EmployeeForm({
                       <FormItem>
                         <FormLabel>Email *</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="john.doe@example.com" {...field} />
+                          <Input
+                            type="email"
+                            placeholder="john.doe@example.com"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -178,8 +224,17 @@ export function EmployeeForm({
                       <FormItem>
                         <FormLabel>SIN *</FormLabel>
                         <FormControl>
-                          <Input placeholder="123-456-789" {...field} />
+                          <Input 
+                            placeholder="123-456-789" 
+                            disabled={!canEditSIN}
+                            {...field} 
+                          />
                         </FormControl>
+                        {!canEditSIN && (
+                          <p className="text-xs text-muted-foreground">
+                            Only administrators and managers can edit SIN
+                          </p>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -239,7 +294,10 @@ export function EmployeeForm({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Province *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select province" />
@@ -250,13 +308,19 @@ export function EmployeeForm({
                             <SelectItem value="BC">British Columbia</SelectItem>
                             <SelectItem value="MB">Manitoba</SelectItem>
                             <SelectItem value="NB">New Brunswick</SelectItem>
-                            <SelectItem value="NL">Newfoundland and Labrador</SelectItem>
+                            <SelectItem value="NL">
+                              Newfoundland and Labrador
+                            </SelectItem>
                             <SelectItem value="NS">Nova Scotia</SelectItem>
                             <SelectItem value="ON">Ontario</SelectItem>
-                            <SelectItem value="PE">Prince Edward Island</SelectItem>
+                            <SelectItem value="PE">
+                              Prince Edward Island
+                            </SelectItem>
                             <SelectItem value="QC">Quebec</SelectItem>
                             <SelectItem value="SK">Saskatchewan</SelectItem>
-                            <SelectItem value="NT">Northwest Territories</SelectItem>
+                            <SelectItem value="NT">
+                              Northwest Territories
+                            </SelectItem>
                             <SelectItem value="NU">Nunavut</SelectItem>
                             <SelectItem value="YT">Yukon</SelectItem>
                           </SelectContent>
@@ -304,7 +368,10 @@ export function EmployeeForm({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Pay Type *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select pay type" />
@@ -328,15 +395,23 @@ export function EmployeeForm({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>
-                          {form.watch("payType") === "HOURLY" ? "Hourly Rate *" : "Annual Salary *"}
+                          {form.watch("payType") === "HOURLY"
+                            ? "Hourly Rate *"
+                            : "Annual Salary *"}
                         </FormLabel>
                         <FormControl>
                           <Input
                             type="number"
                             step="0.01"
-                            placeholder={form.watch("payType") === "HOURLY" ? "25.00" : "50000"}
+                            placeholder={
+                              form.watch("payType") === "HOURLY"
+                                ? "25.00"
+                                : "50000"
+                            }
                             {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            onChange={(e) =>
+                              field.onChange(parseFloat(e.target.value) || 0)
+                            }
                           />
                         </FormControl>
                         <FormMessage />
@@ -349,15 +424,24 @@ export function EmployeeForm({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Department *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select department" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {/* TODO: Load departments dynamically */}
-                            <SelectItem value="temp-dept">Temporary Department</SelectItem>
+                            {availableDepartments.map((department) => (
+                              <SelectItem
+                                key={department.id}
+                                value={department.id}
+                              >
+                                {department.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -370,15 +454,21 @@ export function EmployeeForm({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Position *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select position" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {/* TODO: Load positions dynamically */}
-                            <SelectItem value="temp-pos">Temporary Position</SelectItem>
+                            {availablePositions.map((position) => (
+                              <SelectItem key={position.id} value={position.id}>
+                                {position.title}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -393,16 +483,22 @@ export function EmployeeForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Manager</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select manager (optional)" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {/* TODO: Load managers dynamically */}
-                          <SelectItem value="">No Manager</SelectItem>
-                          <SelectItem value="temp-manager">Temporary Manager</SelectItem>
+                          <SelectItem value="No Manager">No Manager</SelectItem>
+                          {availableManagers.map((manager) => (
+                            <SelectItem key={manager.id} value={manager.id}>
+                              {manager.firstName} {manager.lastName}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -468,10 +564,22 @@ export function EmployeeForm({
 
               {/* Form Actions */}
               <div className="flex gap-4 pt-6">
-                <Button type="submit" disabled={isLoading} className="flex-1 sm:flex-none">
-                  {isLoading ? "Saving..." : mode === "create" ? "Add Employee" : "Update Employee"}
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex-1 sm:flex-none"
+                >
+                  {isLoading
+                    ? "Saving..."
+                    : mode === "create"
+                    ? "Add Employee"
+                    : "Update Employee"}
                 </Button>
-                <Button type="button" variant="outline" className="flex-1 sm:flex-none">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1 sm:flex-none"
+                >
                   Cancel
                 </Button>
               </div>

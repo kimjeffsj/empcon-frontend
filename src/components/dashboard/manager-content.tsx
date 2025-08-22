@@ -56,7 +56,7 @@ export function ManagerContent() {
             <div className="text-center text-muted-foreground py-8">
               <p>Employee management features coming in Phase 2</p>
               <p className="text-sm mt-2">
-                You'll be able to view and manage your team members here
+                You&apos;ll be able to view and manage your team members here
               </p>
             </div>
           </CardContent>
