@@ -96,12 +96,16 @@ export function EmployeeForm({
 
       // Handle role field based on user permissions and mode
       let submitData = { ...data };
-      
+
       if (mode === "edit" && !hasRole(["ADMIN"])) {
         // For edit mode: exclude role field if user is not ADMIN
         const { role, ...dataWithoutRole } = submitData;
         submitData = dataWithoutRole as EmployeeFormData;
-      } else if (mode === "create" && hasRole(["MANAGER"]) && !hasRole(["ADMIN"])) {
+      } else if (
+        mode === "create" &&
+        hasRole(["MANAGER"]) &&
+        !hasRole(["ADMIN"])
+      ) {
         // For create mode: MANAGER can only create EMPLOYEE role
         submitData.role = "EMPLOYEE";
       }

@@ -20,23 +20,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { positionFormSchema, type PositionFormData } from "@/lib/validations/employee";
 
 interface PositionFormProps {
   initialData?: Partial<PositionFormData>;
-  onSubmit: (data: PositionFormData) => Promise<void>;
-  isLoading?: boolean;
-  mode?: "create" | "edit";
-  availableDepartments?: Array<{ id: string; name: string }>;
+  onSubmit: (data: PositionFormData) => void;
+  onCancel: () => void;
+  departments: Array<{ id: string; name: string }>;
+  isSubmitting?: boolean;
 }
 
 export function PositionForm({
   initialData,
   onSubmit,
-  isLoading = false,
-  mode = "create",
-  availableDepartments = [],
+  onCancel,
+  departments,
+  isSubmitting = false,
 }: PositionFormProps) {
   const form = useForm<PositionFormData>({
     resolver: zodResolver(positionFormSchema),
@@ -48,92 +47,79 @@ export function PositionForm({
     },
   });
 
-  const handleSubmit = async (data: PositionFormData) => {
-    try {
-      await onSubmit(data);
-    } catch (error) {
-      console.error("Error submitting position form:", error);
-    }
+  const handleSubmit = (data: PositionFormData) => {
+    onSubmit(data);
   };
 
   return (
-    <Card className="max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>
-          {mode === "create" ? "Add New Position" : "Edit Position"}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Position Title *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Software Developer" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="title"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Position Title *</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g., Senior Software Engineer" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            <FormField
-              control={form.control}
-              name="departmentId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Department *</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a department" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {availableDepartments.map((department) => (
-                        <SelectItem key={department.id} value={department.id}>
-                          {department.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <FormField
+          control={form.control}
+          name="departmentId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Department *</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {departments.map((department) => (
+                    <SelectItem key={department.id} value={department.id}>
+                      {department.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Brief description of the position's responsibilities and requirements..."
-                      className="min-h-[100px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Job description and responsibilities"
+                  className="min-h-[80px]"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            <div className="flex gap-4 pt-6">
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Saving..." : mode === "create" ? "Add Position" : "Update Position"}
-              </Button>
-              <Button type="button" variant="outline">
-                Cancel
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+        <div className="flex justify-end gap-2 pt-4">
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : (initialData ? "Update" : "Create")}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }
