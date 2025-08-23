@@ -1,13 +1,14 @@
-import { 
-  CreateEmployeeRequest, 
-  UpdateEmployeeRequest, 
+import {
+  CreateEmployeeRequest,
+  UpdateEmployeeRequest,
   EmployeeListRequest,
   EmployeeResponse,
   EmployeeListResponse,
-  ApiResponse 
+  ApiResponse,
 } from "@empcon/types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5002/api";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5002/api";
 
 class ApiError extends Error {
   constructor(
@@ -25,7 +26,7 @@ async function makeRequest<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
-  
+
   const config: RequestInit = {
     headers: {
       "Content-Type": "application/json",
@@ -45,7 +46,7 @@ async function makeRequest<T>(
 
   try {
     const response = await fetch(url, config);
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new ApiError(
@@ -66,22 +67,26 @@ async function makeRequest<T>(
 
 export const employeeApi = {
   // Get all employees with filtering and pagination
-  async getEmployees(params?: Partial<EmployeeListRequest>): Promise<EmployeeListResponse> {
+  async getEmployees(
+    params?: Partial<EmployeeListRequest>
+  ): Promise<EmployeeListResponse> {
     const searchParams = new URLSearchParams();
-    
+
     if (params?.page) searchParams.append("page", params.page.toString());
     if (params?.limit) searchParams.append("limit", params.limit.toString());
     if (params?.search) searchParams.append("search", params.search);
     if (params?.status) searchParams.append("status", params.status);
-    if (params?.departmentId) searchParams.append("departmentId", params.departmentId);
-    if (params?.positionId) searchParams.append("positionId", params.positionId);
+    if (params?.departmentId)
+      searchParams.append("departmentId", params.departmentId);
+    if (params?.positionId)
+      searchParams.append("positionId", params.positionId);
     if (params?.managerId) searchParams.append("managerId", params.managerId);
     if (params?.sortBy) searchParams.append("sortBy", params.sortBy);
     if (params?.sortOrder) searchParams.append("sortOrder", params.sortOrder);
 
     const queryString = searchParams.toString();
     const endpoint = `/employees${queryString ? `?${queryString}` : ""}`;
-    
+
     return makeRequest<EmployeeListResponse>(endpoint);
   },
 
@@ -91,7 +96,9 @@ export const employeeApi = {
   },
 
   // Create new employee
-  async createEmployee(data: CreateEmployeeRequest): Promise<ApiResponse<EmployeeResponse>> {
+  async createEmployee(
+    data: CreateEmployeeRequest
+  ): Promise<ApiResponse<EmployeeResponse>> {
     return makeRequest<ApiResponse<EmployeeResponse>>("/employees", {
       method: "POST",
       body: JSON.stringify(data),
@@ -99,7 +106,10 @@ export const employeeApi = {
   },
 
   // Update existing employee
-  async updateEmployee(id: string, data: UpdateEmployeeRequest): Promise<ApiResponse<EmployeeResponse>> {
+  async updateEmployee(
+    id: string,
+    data: UpdateEmployeeRequest
+  ): Promise<ApiResponse<EmployeeResponse>> {
     return makeRequest<ApiResponse<EmployeeResponse>>(`/employees/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
@@ -116,12 +126,20 @@ export const employeeApi = {
 
 export const departmentApi = {
   // Get all departments
-  async getDepartments(): Promise<ApiResponse<Array<{ id: string; name: string; description?: string }>>> {
-    return makeRequest<ApiResponse<Array<{ id: string; name: string; description?: string }>>>("/departments");
+  async getDepartments(): Promise<
+    ApiResponse<Array<{ id: string; name: string; description?: string }>>
+  > {
+    return makeRequest<
+      ApiResponse<Array<{ id: string; name: string; description?: string }>>
+    >("/departments");
   },
 
   // Create new department
-  async createDepartment(data: { name: string; description?: string; managerId?: string }): Promise<ApiResponse> {
+  async createDepartment(data: {
+    name: string;
+    description?: string;
+    managerId?: string;
+  }): Promise<ApiResponse> {
     return makeRequest<ApiResponse>("/departments", {
       method: "POST",
       body: JSON.stringify(data),
@@ -129,7 +147,10 @@ export const departmentApi = {
   },
 
   // Update department
-  async updateDepartment(id: string, data: { name?: string; description?: string; managerId?: string }): Promise<ApiResponse> {
+  async updateDepartment(
+    id: string,
+    data: { name?: string; description?: string; managerId?: string }
+  ): Promise<ApiResponse> {
     return makeRequest<ApiResponse>(`/departments/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
@@ -146,12 +167,34 @@ export const departmentApi = {
 
 export const positionApi = {
   // Get all positions
-  async getPositions(): Promise<ApiResponse<Array<{ id: string; title: string; departmentId: string; description?: string }>>> {
-    return makeRequest<ApiResponse<Array<{ id: string; title: string; departmentId: string; description?: string }>>>("/positions");
+  async getPositions(): Promise<
+    ApiResponse<
+      Array<{
+        id: string;
+        title: string;
+        departmentId: string;
+        description?: string;
+      }>
+    >
+  > {
+    return makeRequest<
+      ApiResponse<
+        Array<{
+          id: string;
+          title: string;
+          departmentId: string;
+          description?: string;
+        }>
+      >
+    >("/positions");
   },
 
   // Create new position
-  async createPosition(data: { title: string; departmentId: string; description?: string }): Promise<ApiResponse> {
+  async createPosition(data: {
+    title: string;
+    departmentId: string;
+    description?: string;
+  }): Promise<ApiResponse> {
     return makeRequest<ApiResponse>("/positions", {
       method: "POST",
       body: JSON.stringify(data),
@@ -159,7 +202,10 @@ export const positionApi = {
   },
 
   // Update position
-  async updatePosition(id: string, data: { title?: string; departmentId?: string; description?: string }): Promise<ApiResponse> {
+  async updatePosition(
+    id: string,
+    data: { title?: string; departmentId?: string; description?: string }
+  ): Promise<ApiResponse> {
     return makeRequest<ApiResponse>(`/positions/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),

@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/dialog";
 import { employeeApi, departmentApi, positionApi, ApiError } from "@/lib/api";
 import type { EmployeeResponse, EmployeeStatus } from "@empcon/types";
-import type { EmployeeFormData } from "@/lib/validations/employee";
+import type { CreateEmployeeSchema } from "@empcon/types";
 
 export default function EmployeesPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -103,7 +103,7 @@ export default function EmployeesPage() {
     }
   };
 
-  const handleCreateEmployee = async (data: EmployeeFormData) => {
+  const handleCreateEmployee = async (data: CreateEmployeeSchema) => {
     setIsLoading(true);
     try {
       await employeeApi.createEmployee(data);
@@ -119,7 +119,7 @@ export default function EmployeesPage() {
     }
   };
 
-  const handleEditEmployee = async (data: EmployeeFormData) => {
+  const handleEditEmployee = async (data: CreateEmployeeSchema) => {
     if (!editingEmployee) return;
 
     setIsLoading(true);

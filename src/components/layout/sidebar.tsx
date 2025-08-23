@@ -5,22 +5,22 @@ import { useAuth } from "@/lib/auth-context";
 import { useCurrentPath } from "@/hooks/use-pathname";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { 
-  Home, 
-  Users, 
-  Calendar, 
-  Clock, 
-  DollarSign, 
-  FileText, 
-  Bell, 
-  BarChart3, 
-  Settings, 
-  ChevronLeft, 
+import {
+  Home,
+  Users,
+  Calendar,
+  Clock,
+  DollarSign,
+  FileText,
+  Bell,
+  BarChart3,
+  Settings,
+  ChevronLeft,
   ChevronRight,
   LogOut,
   User,
   Building2,
-  Briefcase
+  Briefcase,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { UserRole } from "@empcon/types";
@@ -41,28 +41,21 @@ const menuItems: MenuItem[] = [
     label: "Dashboard",
     icon: <Home className="h-4 w-4" />,
     href: "/dashboard",
-    roles: ["ADMIN", "MANAGER", "EMPLOYEE"]
+    roles: ["ADMIN", "MANAGER", "EMPLOYEE"],
   },
   {
     id: "employees",
     label: "Employees",
     icon: <Users className="h-4 w-4" />,
     href: "/admin/employees",
-    roles: ["ADMIN", "MANAGER"]
+    roles: ["ADMIN", "MANAGER"],
   },
   {
     id: "departments",
     label: "Departments",
     icon: <Building2 className="h-4 w-4" />,
     href: "/admin/departments",
-    roles: ["ADMIN"]
-  },
-  {
-    id: "positions",
-    label: "Positions",
-    icon: <Briefcase className="h-4 w-4" />,
-    href: "/admin/positions",
-    roles: ["ADMIN"]
+    roles: ["ADMIN"],
   },
   {
     id: "schedules",
@@ -71,7 +64,7 @@ const menuItems: MenuItem[] = [
     href: "/schedules",
     roles: ["ADMIN", "MANAGER", "EMPLOYEE"],
     disabled: true,
-    badge: "Phase 3"
+    badge: "Phase 3",
   },
   {
     id: "time-clock",
@@ -80,7 +73,7 @@ const menuItems: MenuItem[] = [
     href: "/time-clock",
     roles: ["ADMIN", "MANAGER", "EMPLOYEE"],
     disabled: true,
-    badge: "Phase 4"
+    badge: "Phase 4",
   },
   {
     id: "payroll",
@@ -89,7 +82,7 @@ const menuItems: MenuItem[] = [
     href: "/payroll",
     roles: ["ADMIN"],
     disabled: true,
-    badge: "Phase 5"
+    badge: "Phase 5",
   },
   {
     id: "leave-requests",
@@ -98,7 +91,7 @@ const menuItems: MenuItem[] = [
     href: "/leave-requests",
     roles: ["ADMIN", "MANAGER", "EMPLOYEE"],
     disabled: true,
-    badge: "Phase 6"
+    badge: "Phase 6",
   },
   {
     id: "notifications",
@@ -107,7 +100,7 @@ const menuItems: MenuItem[] = [
     href: "/notifications",
     roles: ["ADMIN", "MANAGER", "EMPLOYEE"],
     disabled: true,
-    badge: "Phase 7"
+    badge: "Phase 7",
   },
   {
     id: "reports",
@@ -116,7 +109,7 @@ const menuItems: MenuItem[] = [
     href: "/reports",
     roles: ["ADMIN", "MANAGER"],
     disabled: true,
-    badge: "Phase 8"
+    badge: "Phase 8",
   },
   {
     id: "settings",
@@ -125,8 +118,8 @@ const menuItems: MenuItem[] = [
     href: "/settings",
     roles: ["ADMIN"],
     disabled: true,
-    badge: "Phase 9"
-  }
+    badge: "Phase 9",
+  },
 ];
 
 interface SidebarProps {
@@ -138,8 +131,8 @@ export function Sidebar({ className }: SidebarProps) {
   const { user, logout } = useAuth();
   const currentPath = useCurrentPath();
 
-  const filteredMenuItems = menuItems.filter(item => 
-    user?.role && item.roles.includes(user.role)
+  const filteredMenuItems = menuItems.filter(
+    (item) => user?.role && item.roles.includes(user.role)
   );
 
   const handleMenuClick = (item: MenuItem) => {
@@ -150,9 +143,11 @@ export function Sidebar({ className }: SidebarProps) {
   };
 
   return (
-    <Card className={`h-screen flex flex-col transition-all duration-300 ${
-      isCollapsed ? "w-16" : "w-64"
-    } ${className}`}>
+    <Card
+      className={`h-screen flex flex-col transition-all duration-300 ${
+        isCollapsed ? "w-16" : "w-64"
+      } ${className}`}
+    >
       {/* Header */}
       <div className="p-4 border-b">
         <div className="flex items-center justify-between">
@@ -214,20 +209,20 @@ export function Sidebar({ className }: SidebarProps) {
                 onClick={() => handleMenuClick(item)}
                 disabled={item.disabled}
               >
-              <div className="flex items-center gap-3 w-full">
-                {item.icon}
-                {!isCollapsed && (
-                  <>
-                    <span className="flex-1 text-left">{item.label}</span>
-                    {item.badge && (
-                      <span className="text-xs bg-muted px-2 py-1 rounded">
-                        {item.badge}
-                      </span>
-                    )}
-                  </>
-                )}
-              </div>
-            </Button>
+                <div className="flex items-center gap-3 w-full">
+                  {item.icon}
+                  {!isCollapsed && (
+                    <>
+                      <span className="flex-1 text-left">{item.label}</span>
+                      {item.badge && (
+                        <span className="text-xs bg-muted px-2 py-1 rounded">
+                          {item.badge}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
+              </Button>
             );
           })}
         </div>
@@ -237,9 +232,7 @@ export function Sidebar({ className }: SidebarProps) {
       <div className="p-4 border-t">
         <Button
           variant="ghost"
-          className={`w-full justify-start ${
-            isCollapsed ? "px-2" : "px-3"
-          }`}
+          className={`w-full justify-start ${isCollapsed ? "px-2" : "px-3"}`}
           onClick={logout}
         >
           <LogOut className="h-4 w-4" />

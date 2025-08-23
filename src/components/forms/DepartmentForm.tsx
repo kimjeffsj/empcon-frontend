@@ -13,11 +13,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { departmentFormSchema, type DepartmentFormData } from "@/lib/validations/employee";
+import { createDepartmentSchema, type CreateDepartmentSchema } from "@empcon/types";
 
 interface DepartmentFormProps {
-  initialData?: Partial<DepartmentFormData>;
-  onSubmit: (data: DepartmentFormData) => void;
+  initialData?: Partial<CreateDepartmentSchema>;
+  onSubmit: (data: CreateDepartmentSchema) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
 }
@@ -28,8 +28,8 @@ export function DepartmentForm({
   onCancel,
   isSubmitting = false,
 }: DepartmentFormProps) {
-  const form = useForm<DepartmentFormData>({
-    resolver: zodResolver(departmentFormSchema),
+  const form = useForm<CreateDepartmentSchema>({
+    resolver: zodResolver(createDepartmentSchema),
     defaultValues: {
       name: "",
       description: "",
@@ -37,7 +37,7 @@ export function DepartmentForm({
     },
   });
 
-  const handleSubmit = (data: DepartmentFormData) => {
+  const handleSubmit = (data: CreateDepartmentSchema) => {
     onSubmit(data);
   };
 

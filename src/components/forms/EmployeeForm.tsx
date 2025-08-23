@@ -22,14 +22,14 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  employeeFormSchema,
-  type EmployeeFormData,
-} from "@/lib/validations/employee";
+  createEmployeeSchema,
+  type CreateEmployeeSchema,
+} from "@empcon/types";
 import { useAuth } from "@/lib/auth-context";
 
 interface EmployeeFormProps {
-  initialData?: Partial<EmployeeFormData>;
-  onSubmit: (data: EmployeeFormData) => Promise<void>;
+  initialData?: Partial<CreateEmployeeSchema>;
+  onSubmit: (data: CreateEmployeeSchema) => Promise<void>;
   isLoading?: boolean;
   mode?: "create" | "edit";
   availableDepartments?: Array<{ id: string; name: string }>;
@@ -55,8 +55,8 @@ export function EmployeeForm({
   // Check if user can edit SIN (ADMIN and MANAGER only)
   const canEditSIN = hasRole(["ADMIN", "MANAGER"]);
 
-  const form = useForm<EmployeeFormData>({
-    resolver: zodResolver(employeeFormSchema),
+  const form = useForm<CreateEmployeeSchema>({
+    resolver: zodResolver(createEmployeeSchema),
     defaultValues: {
       firstName: "",
       lastName: "",
@@ -84,7 +84,7 @@ export function EmployeeForm({
     },
   });
 
-  const handleSubmit = async (data: EmployeeFormData) => {
+  const handleSubmit = async (data: CreateEmployeeSchema) => {
     try {
       console.log("🚀 [EmployeeForm] Form submission started with data:", {
         ...data,
@@ -100,7 +100,7 @@ export function EmployeeForm({
       if (mode === "edit" && !hasRole(["ADMIN"])) {
         // For edit mode: exclude role field if user is not ADMIN
         const { role, ...dataWithoutRole } = submitData;
-        submitData = dataWithoutRole as EmployeeFormData;
+        submitData = dataWithoutRole as CreateEmployeeSchema;
       } else if (
         mode === "create" &&
         hasRole(["MANAGER"]) &&

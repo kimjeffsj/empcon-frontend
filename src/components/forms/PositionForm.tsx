@@ -20,11 +20,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { positionFormSchema, type PositionFormData } from "@/lib/validations/employee";
+import { createPositionSchema, type CreatePositionSchema } from "@empcon/types";
 
 interface PositionFormProps {
-  initialData?: Partial<PositionFormData>;
-  onSubmit: (data: PositionFormData) => void;
+  initialData?: Partial<CreatePositionSchema>;
+  onSubmit: (data: CreatePositionSchema) => void;
   onCancel: () => void;
   departments: Array<{ id: string; name: string }>;
   isSubmitting?: boolean;
@@ -37,8 +37,8 @@ export function PositionForm({
   departments,
   isSubmitting = false,
 }: PositionFormProps) {
-  const form = useForm<PositionFormData>({
-    resolver: zodResolver(positionFormSchema),
+  const form = useForm<CreatePositionSchema>({
+    resolver: zodResolver(createPositionSchema),
     defaultValues: {
       title: "",
       departmentId: "",
@@ -47,7 +47,7 @@ export function PositionForm({
     },
   });
 
-  const handleSubmit = (data: PositionFormData) => {
+  const handleSubmit = (data: CreatePositionSchema) => {
     onSubmit(data);
   };
 
