@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { ReduxProvider } from "@/lib/providers";
 import "./globals.css";
-import { AppLayout } from "@/shared/layout/AppLayout";
 import { ProtectedLayout } from "@/shared/layout/ProtectedLayout";
 
 export const metadata: Metadata = {

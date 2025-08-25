@@ -52,7 +52,6 @@ export default function LoginPage() {
       dispatch(
         setCredentials({
           user: result.user,
-          token: result.token,
         })
       );
 

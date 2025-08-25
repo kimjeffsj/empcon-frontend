@@ -3,7 +3,9 @@
 import { RootState } from "@/store";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { useGetProfileQuery } from "@/store/api/authApi";
+import { setCredentials } from "@/store/authSlice";
 import { AppLayout } from "./AppLayout";
 
 interface ProtectedLayoutProps {
@@ -11,27 +13,97 @@ interface ProtectedLayoutProps {
 }
 
 export const ProtectedLayout = ({ children }: ProtectedLayoutProps) => {
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated, user } = useSelector(
+    (state: RootState) => state.auth
+  );
+  const dispatch = useDispatch();
   const router = useRouter();
   const pathname = usePathname();
 
+  // Try to restore authentication state from cookies
+  const {
+    data: profileData,
+    isSuccess,
+    isError,
+    isLoading: isProfileLoading,
+    isFetching,
+  } = useGetProfileQuery(undefined, {
+    // Skip if already authenticated or on login page
+    skip: isAuthenticated || pathname === "/login",
+    refetchOnMountOrArgChange: false,
+    refetchOnFocus: false,
+  });
+
+  // Restore Redux state when profile data is received
   useEffect(() => {
-    // If not authenticated and not on login page, redirect to login
-    if (!isAuthenticated && pathname !== "/login") {
-      router.push("/login");
+    if (isSuccess && profileData) {
+      dispatch(setCredentials({ user: profileData }));
     }
-  }, [isAuthenticated, pathname, router]);
+  }, [isSuccess, profileData, dispatch]);
+
+  // Handle authentication redirects with improved logic
+  useEffect(() => {
+    // Don't redirect while profile is loading or fetching
+    if (isProfileLoading || isFetching) return;
+
+    // Don't redirect on login page
+    if (pathname === "/login") return;
+
+    // Only redirect to login if:
+    // 1. Not authenticated AND
+    // 2. Profile query has completed (not loading) AND
+    // 3. Profile query failed (isError) AND
+    // 4. We've waited long enough for any potential auth restoration
+    if (!isAuthenticated && !isProfileLoading && !isFetching && isError) {
+      const timer = setTimeout(() => {
+        // Double-check auth state hasn't changed during timeout
+        const currentAuth = (window as any).store?.getState?.()?.auth
+          ?.isAuthenticated;
+        if (!currentAuth) {
+          router.push("/login");
+        }
+      }, 200); // Small delay to ensure auth state is properly restored
+
+      return () => clearTimeout(timer);
+    }
+  }, [
+    isAuthenticated,
+    pathname,
+    router,
+    isError,
+    isProfileLoading,
+    isFetching,
+  ]);
 
   // If on login page, don't show AppLayout
   if (pathname === "/login") {
     return <>{children}</>;
   }
 
+  // Show loading while checking authentication
+  if ((isProfileLoading || isFetching) && !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Authenticating...</p>
+        </div>
+      </div>
+    );
+  }
+
   // If authenticated, show AppLayout
-  if (isAuthenticated) {
+  if (isAuthenticated && user) {
     return <AppLayout>{children}</AppLayout>;
   }
 
-  // Loading state or redirect
-  return <div>Loading...</div>;
+  // Show loading for any other transitional states
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    </div>
+  );
 };

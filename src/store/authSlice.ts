@@ -13,14 +13,12 @@ interface User {
 
 interface AuthState {
   user: User | null
-  token: string | null
   isAuthenticated: boolean
   isLoading: boolean
 }
 
 const initialState: AuthState = {
   user: null,
-  token: null,
   isAuthenticated: false,
   isLoading: false,
 }
@@ -31,16 +29,14 @@ const authSlice = createSlice({
   reducers: {
     setCredentials: (
       state,
-      action: PayloadAction<{ user: User; token: string }>
+      action: PayloadAction<{ user: User }>
     ) => {
       state.user = action.payload.user
-      state.token = action.payload.token
       state.isAuthenticated = true
       state.isLoading = false
     },
     logout: (state) => {
       state.user = null
-      state.token = null
       state.isAuthenticated = false
       state.isLoading = false
     },
