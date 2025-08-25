@@ -145,3 +145,24 @@ export const mockDepartments = [
   { id: "dept-3", name: "Marketing" },
   { id: "dept-4", name: "Human Resources" },
 ];
+
+export const mockPositions = {
+  "dept-1": [
+    { id: "pos-1", title: "Senior Developer" },
+    { id: "pos-4", title: "Junior Developer" },
+    { id: "pos-5", title: "Tech Lead" },
+  ],
+  "dept-2": [
+    { id: "pos-2", title: "UX Designer" },
+    { id: "pos-6", title: "UI Designer" },
+    { id: "pos-7", title: "Design Manager" },
+  ],
+  "dept-3": [
+    { id: "pos-3", title: "Marketing Manager" },
+    { id: "pos-8", title: "Marketing Specialist" },
+  ],
+  "dept-4": [
+    { id: "pos-9", title: "HR Manager" },
+    { id: "pos-10", title: "HR Specialist" },
+  ],
+};

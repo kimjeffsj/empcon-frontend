@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { mockDepartments, mockEmployees } from "../data/mockEmployees";
-import { EmployeeResponse } from "@empcon/types";
+import { CreateEmployeeRequest, EmployeeResponse } from "@empcon/types";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Edit, Mail, Phone, Plus, Search, Trash2 } from "lucide-react";
@@ -23,16 +23,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/ui/table";
+import { AddEmployeeModal } from "./AddEmployeeModal";
+import { toast } from "sonner";
 
 export const EmployeeList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
+  const [employees, setEmployees] = useState<EmployeeResponse[]>(mockEmployees);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
   // Filtered Employees (useMemo)
   const filteredEmployees = useMemo(() => {
-    return mockEmployees.filter((employee) => {
-      // Name, Email, Department keyword filter
+    return employees.filter((employee) => {
       const searchMatch =
         searchTerm === "" ||
         employee.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -42,18 +46,74 @@ export const EmployeeList = () => {
           .toLowerCase()
           .includes(searchTerm.toLowerCase());
 
-      // Department filter
       const departmentMatch =
         departmentFilter === "all" ||
         employee.departmentId === departmentFilter;
 
-      // Status Filter
       const statusMatch =
         statusFilter === "all" || employee.status === statusFilter;
 
       return searchMatch && departmentMatch && statusMatch;
     });
-  }, [searchTerm, departmentFilter, statusFilter]);
+  }, [employees, searchTerm, departmentFilter, statusFilter]);
+
+  const handleAddEmployee = (employeeData: CreateEmployeeRequest) => {
+    // Mock 데이터로 새 직원 생성
+    const departmentName = mockDepartments.find(
+      (d) => d.id === employeeData.departmentId
+    )?.name;
+
+    const newEmployee: EmployeeResponse = {
+      id: `emp-${Date.now()}`, // 임시 ID
+      employeeNumber: `EMP${Date.now().toString().slice(-9)}`,
+      firstName: employeeData.firstName,
+      lastName: employeeData.lastName,
+      middleName: employeeData.middleName,
+      email: employeeData.email,
+      phone: employeeData.phone,
+      addressLine1: employeeData.addressLine1,
+      addressLine2: employeeData.addressLine2,
+      city: employeeData.city,
+      province: employeeData.province,
+      postalCode: employeeData.postalCode,
+      dateOfBirth: employeeData.dateOfBirth,
+      hireDate: employeeData.hireDate,
+      payRate: employeeData.payRate || 0,
+      payType: employeeData.payType,
+      status: "ACTIVE", // 새 직원은 기본적으로 ACTIVE
+      departmentId: employeeData.departmentId,
+      positionId: employeeData.positionId,
+      managerId: employeeData.managerId,
+      emergencyContactName: employeeData.emergencyContactName,
+      emergencyContactPhone: employeeData.emergencyContactPhone,
+      notes: employeeData.notes,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      user: {
+        id: `user-${Date.now()}`,
+        email: employeeData.email,
+        role: employeeData.role || "EMPLOYEE",
+      },
+      department: {
+        id: employeeData.departmentId,
+        name: departmentName || "Unknown",
+      },
+      position: {
+        id: employeeData.positionId,
+        title: "Position Title", // TODO: position 매핑 추가
+      },
+    };
+
+    // 직원 목록에 추가
+    setEmployees((prev) => [newEmployee, ...prev]);
+
+    // 성공 알림
+    toast.success("Employee Added Successfully", {
+      description: `${newEmployee.firstName} ${newEmployee.lastName} has been added to the system.`,
+    });
+
+    console.log("New employee added:", newEmployee);
+  };
 
   const getStatusBadge = (status: EmployeeResponse["status"]) => {
     switch (status) {
@@ -86,7 +146,7 @@ export const EmployeeList = () => {
             Manage and view employee information
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setIsAddModalOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Add Employee
         </Button>
@@ -240,6 +300,13 @@ export const EmployeeList = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Add Employee Modal */}
+      <AddEmployeeModal
+        open={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSubmit={handleAddEmployee}
+      />
     </div>
   );
 };

@@ -1,0 +1,235 @@
+"use client";
+
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/shared/ui/alert-dialog";
+import { Button } from "@/shared/ui/button";
+import { Progress } from "@/shared/ui/progress";
+import { CreateEmployeeRequest } from "@empcon/types";
+import { ArrowLeft, ArrowRight, X } from "lucide-react";
+import { useState } from "react";
+import { BasicInfoStep } from "./add-employee-steps/BasicInfoStep";
+import { AddressInfoStep } from "./add-employee-steps/AddressInfoStep";
+import { PayInfoStep } from "./add-employee-steps/PayInfoStep";
+import { AdditionalInfoStep } from "./add-employee-steps/AdditionalInfoStep";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
+
+interface AddEmployeeModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (employee: CreateEmployeeRequest) => void;
+}
+
+// Modal Steps
+const STEPS = [
+  {
+    id: 1,
+    title: "Basic Information",
+    description: "Personal and job details",
+  },
+  { id: 2, title: "Address Information", description: "Home address details" },
+  {
+    id: 3,
+    title: "Pay & Employment",
+    description: "Salary and employment type",
+  },
+  {
+    id: 4,
+    title: "Additional Information",
+    description: "Emergency contact and notes",
+  },
+];
+
+export const AddEmployeeModal = ({
+  open,
+  onClose,
+  onSubmit,
+}: AddEmployeeModalProps) => {
+  const currentUserRole = useSelector(
+    (state: RootState) => state.auth.user?.role
+  );
+
+  // Current Steps
+  const [currentStep, setCurrentStep] = useState(1);
+
+  // Form Data(All steps data management)
+  const [formData, setFormData] = useState<Partial<CreateEmployeeRequest>>({});
+
+  // Each steps validation
+  const [stepValidation, setStepValidation] = useState({
+    1: false,
+    2: false,
+    3: false,
+    4: false,
+  });
+
+  // Form data update
+  const updateFormData = (stepData: Partial<CreateEmployeeRequest>) => {
+    setFormData((prev) => ({ ...prev, ...stepData }));
+  };
+
+  // Next step
+  const handleNext = () => {
+    if (currentStep < STEPS.length) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  // Previous step
+  const handlePrevious = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  // Submit
+  const handleSubmit = () => {
+    // TODO: Submit logic here
+    console.log("Final form data: ", formData);
+    onSubmit(formData as CreateEmployeeRequest);
+    handleClose();
+  };
+
+  // Reset form
+  const handleClose = () => {
+    setCurrentStep(1);
+    setFormData({});
+    setStepValidation({ 1: false, 2: false, 3: false, 4: false });
+    onClose();
+  };
+
+  // Progress (25%, 50%, 75%, 100%)
+  const progressValue = (currentStep / STEPS.length) * 100;
+
+  // 현재 단계 컴포넌트 렌더링
+  const renderCurrentStep = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <BasicInfoStep
+            data={formData}
+            onUpdate={updateFormData}
+            onValidationChange={(isValid) =>
+              setStepValidation((prev) => ({ ...prev, 1: isValid }))
+            }
+          />
+        );
+      case 2:
+        return (
+          <AddressInfoStep
+            data={formData}
+            onUpdate={updateFormData}
+            onValidationChange={(isValid) =>
+              setStepValidation((prev) => ({ ...prev, 2: isValid }))
+            }
+          />
+        );
+      case 3:
+        return (
+          <PayInfoStep
+            data={formData}
+            onUpdate={updateFormData}
+            onValidationChange={(isValid) =>
+              setStepValidation((prev) => ({ ...prev, 3: isValid }))
+            }
+            currentUserRole={currentUserRole}
+          />
+        );
+      case 4:
+        return (
+          <AdditionalInfoStep
+            data={formData}
+            onUpdate={updateFormData}
+            onValidationChange={(isValid) =>
+              setStepValidation((prev) => ({ ...prev, 4: isValid }))
+            }
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <AlertDialog open={open} onOpenChange={handleClose}>
+      <AlertDialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <AlertDialogHeader>
+          <div className="flex items-center justify-between">
+            <AlertDialogTitle>Add New Employee</AlertDialogTitle>
+            <Button variant="ghost" size="sm" onClick={handleClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </AlertDialogHeader>
+
+        {/* Progress Bar */}
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium">
+              Step {currentStep} of {STEPS.length}
+            </span>
+            <span className="text-sm text-muted-foreground">
+              {Math.round(progressValue)}% Complete
+            </span>
+          </div>
+          <Progress value={progressValue} className="h-2" />
+
+          {/* Current Step title */}
+          <div className="mt-4">
+            <h3 className="font-semibold">{STEPS[currentStep - 1].title}</h3>
+            <p className="text-sm text-muted-foreground">
+              {STEPS[currentStep - 1].description}
+            </p>
+          </div>
+        </div>
+
+        {/* Step Content */}
+        <div className="px-6 py-4">{renderCurrentStep()}</div>
+
+        {/* Footer Buttons */}
+        <div className="flex items-center justify-between px-6 py-4 border-t">
+          <Button
+            variant="outline"
+            onClick={handlePrevious}
+            disabled={currentStep === 1}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Previous
+          </Button>
+
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleClose}>
+              Cancel
+            </Button>
+
+            {currentStep === STEPS.length ? (
+              <Button
+                onClick={handleSubmit}
+                disabled={
+                  !stepValidation[currentStep as keyof typeof stepValidation]
+                }
+              >
+                Create Employee
+              </Button>
+            ) : (
+              <Button
+                onClick={handleNext}
+                disabled={
+                  !stepValidation[currentStep as keyof typeof stepValidation]
+                }
+              >
+                Next
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+};
