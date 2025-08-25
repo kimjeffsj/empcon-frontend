@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/shared/ui/badge";
 import { StatsCard } from "@/shared/components/StatsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import {

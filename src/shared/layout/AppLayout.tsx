@@ -28,7 +28,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-} from "@/components/ui/sidebar";
+} from "@/shared/ui/sidebar";
 
 const ADMIN_MENU_ITEMS = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -75,6 +75,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     try {
       await logoutMutation().unwrap();
     } catch (error) {
+      alert("Logout failed");
       console.error("Logout failed:", error);
     } finally {
       dispatch(logout());
