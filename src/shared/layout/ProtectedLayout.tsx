@@ -7,6 +7,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { useGetProfileQuery } from "@/store/api/authApi";
 import { setCredentials } from "@/store/authSlice";
 import { AppLayout } from "./AppLayout";
+import { LoadingIndicator } from "../components/Loading";
 
 interface ProtectedLayoutProps {
   children: React.ReactNode;
@@ -82,14 +83,7 @@ export const ProtectedLayout = ({ children }: ProtectedLayoutProps) => {
 
   // Show loading while checking authentication
   if ((isProfileLoading || isFetching) && !isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Authenticating...</p>
-        </div>
-      </div>
-    );
+    return <LoadingIndicator />;
   }
 
   // If authenticated, show AppLayout
@@ -98,12 +92,5 @@ export const ProtectedLayout = ({ children }: ProtectedLayoutProps) => {
   }
 
   // Show loading for any other transitional states
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
-    </div>
-  );
+  return <LoadingIndicator />;
 };
