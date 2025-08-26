@@ -7,6 +7,12 @@ import { Label } from "@/shared/ui/label";
 import { CreateEmployeeRequest } from "@empcon/types";
 import { Calendar, DollarSign } from "lucide-react";
 import { useEffect, useState } from "react";
+import {
+  calculateAge,
+  calculateAnnualSalary,
+  formatPayRate,
+  formatSIN,
+} from "@/lib/formatter";
 
 interface PayInfoStepProps {
   data: Partial<CreateEmployeeRequest>;
@@ -51,27 +57,7 @@ export const PayInfoStep = ({
 
   // SIN format (000-000-000)
   const handleSINChange = (value: string) => {
-    // Only numbers
-    let cleaned = value.replace(/\D/g, "");
-
-    // Up to 9 digits
-    if (cleaned.length > 9) {
-      cleaned = cleaned.slice(0, 9);
-    }
-
-    // format: 000-000-000
-    if (cleaned.length > 6) {
-      cleaned =
-        cleaned.slice(0, 3) +
-        "-" +
-        cleaned.slice(3, 6) +
-        "-" +
-        cleaned.slice(6);
-    } else if (cleaned.length > 3) {
-      cleaned = cleaned.slice(0, 3) + "-" + cleaned.slice(3);
-    }
-
-    handleFieldChange("sin", cleaned);
+    handleFieldChange("sin", formatSIN(value));
   };
 
   // Pay rate formatting
@@ -86,29 +72,6 @@ export const PayInfoStep = ({
     }
 
     handleFieldChange("payRate", formatted);
-  };
-
-  // Check Age
-  const calculateAge = (birthDate: string) => {
-    if (!birthDate) return null;
-    const today = new Date();
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-
-    if (
-      monthDiff < 0 ||
-      (monthDiff === 0 && today.getDate() < birth.getDate())
-    ) {
-      age--;
-    }
-    return age;
-  };
-
-  // Calculate Annual expected Salary
-  const calculateAnnualSalary = (hourlyRate: number) => {
-    // 40 hours week * 52 weeks(year)
-    return hourlyRate * 40 * 52;
   };
 
   // Validation

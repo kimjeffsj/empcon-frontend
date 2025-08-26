@@ -9,6 +9,7 @@ import { Textarea } from "@/shared/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Separator } from "@/shared/ui/separator";
 import { Badge } from "@/shared/ui/badge";
+import { formatPayRate, formatPhoneNumber } from "@/lib/formatter";
 
 interface AdditionalInfoStepProps {
   data: Partial<CreateEmployeeRequest>;
@@ -35,27 +36,7 @@ export function AdditionalInfoStep({
 
   // Format phone number
   const handlePhoneChange = (value: string) => {
-    // number only
-    let cleaned = value.replace(/\D/g, "");
-
-    // Up to 10 digits
-    if (cleaned.length > 10) {
-      cleaned = cleaned.slice(0, 10);
-    }
-
-    // Format: (555) 123-4567
-    if (cleaned.length >= 10) {
-      cleaned = `(${cleaned.slice(0, 3)}) ${cleaned.slice(
-        3,
-        6
-      )}-${cleaned.slice(6)}`;
-    } else if (cleaned.length >= 6) {
-      cleaned = `(${cleaned.slice(0, 3)}) ${cleaned.slice(3)}`;
-    } else if (cleaned.length >= 3) {
-      cleaned = `(${cleaned.slice(0, 3)}) ${cleaned.slice(3)}`;
-    }
-
-    handleFieldChange("emergencyContactPhone", cleaned);
+    handleFieldChange("emergencyContactPhone", formatPhoneNumber(value));
   };
 
   // Validation (Always true - optional section)
@@ -89,13 +70,6 @@ export function AdditionalInfoStep({
       data.postalCode,
     ].filter(Boolean);
     return parts.join(", ");
-  };
-
-  const formatPayRate = () => {
-    if (!data.payRate || !data.payType) return "Not specified";
-    return `$${data.payRate.toLocaleString()}${
-      data.payType === "HOURLY" ? "/hr" : "/year"
-    }`;
   };
 
   return (
@@ -257,7 +231,9 @@ export function AdditionalInfoStep({
                 </div>
                 <div>
                   <p className="text-muted-foreground">Pay Rate</p>
-                  <p className="font-medium">{formatPayRate()}</p>
+                  <p className="font-medium">
+                    {formatPayRate(data.payRate || 0, data.payType || "HOURLY")}
+                  </p>
                 </div>
               </div>
             </div>

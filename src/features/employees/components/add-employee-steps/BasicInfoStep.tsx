@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
+import { formatPhoneNumber } from "@/lib/formatter";
 
 interface BasicInfoStepProps {
   data: Partial<CreateEmployeeRequest>;
@@ -60,27 +61,7 @@ export const BasicInfoStep = ({
 
   // Format phone number
   const handlePhoneChange = (value: string) => {
-    // number only
-    let cleaned = value.replace(/\D/g, "");
-
-    // Up to 10 digits
-    if (cleaned.length > 10) {
-      cleaned = cleaned.slice(0, 10);
-    }
-
-    // Format: (555) 123-4567
-    if (cleaned.length >= 10) {
-      cleaned = `(${cleaned.slice(0, 3)}) ${cleaned.slice(
-        3,
-        6
-      )}-${cleaned.slice(6)}`;
-    } else if (cleaned.length >= 6) {
-      cleaned = `(${cleaned.slice(0, 3)}) ${cleaned.slice(3)}`;
-    } else if (cleaned.length >= 3) {
-      cleaned = `(${cleaned.slice(0, 3)}) ${cleaned.slice(3)}`;
-    }
-
-    handleFieldChange("phone", cleaned);
+    handleFieldChange("phone", formatPhoneNumber(value));
   };
 
   // Validation

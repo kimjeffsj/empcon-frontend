@@ -1,5 +1,6 @@
 "use client";
 
+import { formatPostalCode } from "@/lib/formatter";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import {
@@ -54,20 +55,7 @@ export const AddressInfoStep = ({
   };
   // Format postal code (Canadian postal code: A1A 1A1)
   const handlePostalCodeChange = (value: string) => {
-    // Letter/Number only and capital
-    let cleaned = value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-
-    // Only up to 6 digits
-    if (cleaned.length > 6) {
-      cleaned = cleaned.slice(0, 6);
-    }
-
-    // Then add space
-    if (cleaned.length > 3) {
-      cleaned = cleaned.slice(0, 3) + " " + cleaned.slice(3);
-    }
-
-    handleFieldChange("postalCode", cleaned);
+    handleFieldChange("postalCode", formatPostalCode(value));
   };
 
   // Validation for next step

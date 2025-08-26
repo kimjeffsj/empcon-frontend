@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { mockDepartments, mockEmployees } from "../data/mockEmployees";
 import { CreateEmployeeRequest, EmployeeResponse } from "@empcon/types";
-import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Edit, Mail, Phone, Plus, Search, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -25,6 +24,8 @@ import {
 } from "@/shared/ui/table";
 import { AddEmployeeModal } from "./AddEmployeeModal";
 import { toast } from "sonner";
+import { StatusBadge } from "@/shared/components/StatusBadge";
+import { formatPayRate } from "@/lib/formatter";
 
 export const EmployeeList = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -113,27 +114,6 @@ export const EmployeeList = () => {
     });
 
     console.log("New employee added:", newEmployee);
-  };
-
-  const getStatusBadge = (status: EmployeeResponse["status"]) => {
-    switch (status) {
-      case "ACTIVE":
-        return <Badge variant="default">Active</Badge>;
-      case "INACTIVE":
-        return <Badge variant="secondary">Inactive</Badge>;
-      case "ON_LEAVE":
-        return <Badge variant="outline">On Leave</Badge>;
-      case "TERMINATED":
-        return <Badge variant="destructive">Terminated</Badge>;
-    }
-  };
-
-  const formatPay = (payRate: number, payType: "HOURLY" | "SALARY") => {
-    if (payType === "HOURLY") {
-      return `$${payRate.toFixed(2)}/hr`;
-    } else {
-      return `$${payRate.toLocaleString()}/yr`;
-    }
   };
 
   return (
@@ -263,7 +243,7 @@ export const EmployeeList = () => {
 
                   {/* 급여 */}
                   <TableCell>
-                    {formatPay(employee.payRate, employee.payType)}
+                    {formatPayRate(employee.payRate, employee.payType)}
                   </TableCell>
 
                   {/* 입사일 */}
@@ -272,7 +252,9 @@ export const EmployeeList = () => {
                   </TableCell>
 
                   {/* 상태 */}
-                  <TableCell>{getStatusBadge(employee.status)}</TableCell>
+                  <TableCell>
+                    <StatusBadge status={employee.status} />
+                  </TableCell>
 
                   {/* 액션 */}
                   <TableCell>
