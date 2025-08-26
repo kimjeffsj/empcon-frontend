@@ -10,7 +10,7 @@ import { Button } from "@/shared/ui/button";
 import { Progress } from "@/shared/ui/progress";
 import { CreateEmployeeRequest, EmployeeResponse } from "@empcon/types";
 import { ArrowLeft, ArrowRight, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { BasicInfoStep } from "./add-employee-steps/BasicInfoStep";
 import { AddressInfoStep } from "./add-employee-steps/AddressInfoStep";
 import { PayInfoStep } from "./add-employee-steps/PayInfoStep";
@@ -145,6 +145,36 @@ export const AddEmployeeModal = ({
   // Progress (25%, 50%, 75%, 100%)
   const progressValue = (currentStep / STEPS.length) * 100;
 
+  // Change detection for Edit mode
+  const hasChanges = useMemo(() => {
+    if (mode === 'create') return true; // Always allow creation
+    if (!initialData) return true; // No initial data to compare
+
+    // Compare important fields to detect changes
+    const fieldsToCompare: (keyof CreateEmployeeRequest)[] = [
+      'firstName', 'lastName', 'middleName', 'email', 'phone',
+      'addressLine1', 'addressLine2', 'city', 'province', 'postalCode',
+      'dateOfBirth', 'hireDate', 'payRate', 'payType', 'role',
+      'departmentId', 'positionId', 'managerId',
+      'emergencyContactName', 'emergencyContactPhone', 'notes'
+    ];
+
+    return fieldsToCompare.some(field => {
+      const currentValue = formData[field];
+      const initialValue = field === 'role' 
+        ? initialData.user?.role 
+        : initialData[field as keyof EmployeeResponse];
+      
+      // Handle different data types
+      if (typeof currentValue === 'number' && typeof initialValue === 'number') {
+        return currentValue !== initialValue;
+      }
+      
+      // Convert to string for comparison (handles undefined/null)
+      return String(currentValue || '') !== String(initialValue || '');
+    });
+  }, [mode, initialData, formData]);
+
   // 현재 단계 컴포넌트 렌더링
   const renderCurrentStep = () => {
     switch (currentStep) {
@@ -251,7 +281,8 @@ export const AddEmployeeModal = ({
               <Button
                 onClick={handleSubmit}
                 disabled={
-                  !stepValidation[currentStep as keyof typeof stepValidation]
+                  !stepValidation[currentStep as keyof typeof stepValidation] ||
+                  (mode === 'edit' && !hasChanges)
                 }
               >
                 {submitButtonText}

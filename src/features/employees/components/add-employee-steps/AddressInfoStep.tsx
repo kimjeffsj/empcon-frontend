@@ -48,6 +48,17 @@ export const AddressInfoStep = ({
     postalCode: data.postalCode || "",
   });
 
+  // Synchronize with data prop changes (for Edit mode)
+  useEffect(() => {
+    setLocalData({
+      addressLine1: data.addressLine1 || "",
+      addressLine2: data.addressLine2 || "",
+      city: data.city || "",
+      province: data.province || "",
+      postalCode: data.postalCode || "",
+    });
+  }, [data]);
+
   const handleFieldChange = (field: string, value: string) => {
     const newData = { ...localData, [field]: value };
     setLocalData(newData);

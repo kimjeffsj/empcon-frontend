@@ -9,7 +9,11 @@ import { Textarea } from "@/shared/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Separator } from "@/shared/ui/separator";
 import { Badge } from "@/shared/ui/badge";
-import { formatPayRate, formatPhoneNumber } from "@/lib/formatter";
+import {
+  cleanPhoneNumber,
+  formatPayRate,
+  formatPhoneNumber,
+} from "@/lib/formatter";
 
 interface AdditionalInfoStepProps {
   data: Partial<CreateEmployeeRequest>;
@@ -28,6 +32,15 @@ export function AdditionalInfoStep({
     notes: data.notes || "",
   });
 
+  // Synchronize with data prop changes (for Edit mode)
+  useEffect(() => {
+    setLocalData({
+      emergencyContactName: data.emergencyContactName || "",
+      emergencyContactPhone: data.emergencyContactPhone || "",
+      notes: data.notes || "",
+    });
+  }, [data]);
+
   const handleFieldChange = (field: string, value: string) => {
     const newData = { ...localData, [field]: value };
     setLocalData(newData);
@@ -36,7 +49,7 @@ export function AdditionalInfoStep({
 
   // Format phone number
   const handlePhoneChange = (value: string) => {
-    handleFieldChange("emergencyContactPhone", formatPhoneNumber(value));
+    handleFieldChange("emergencyContactPhone", cleanPhoneNumber(value));
   };
 
   // Validation (Always true - optional section)
@@ -85,7 +98,7 @@ export function AdditionalInfoStep({
             <Label htmlFor="emergencyContactName">Contact Name</Label>
             <Input
               id="emergencyContactName"
-              value={localData.emergencyContactName}
+              value={formatPhoneNumber(localData.emergencyContactName)}
               onChange={(e) =>
                 handleFieldChange("emergencyContactName", e.target.value)
               }

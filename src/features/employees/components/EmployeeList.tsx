@@ -25,7 +25,7 @@ import {
 import { AddEmployeeModal } from "./AddEmployeeModal";
 import { toast } from "sonner";
 import { StatusBadge } from "@/shared/components/StatusBadge";
-import { formatPayRate } from "@/lib/formatter";
+import { formatPayRate, formatPhoneNumber } from "@/lib/formatter";
 
 export const EmployeeList = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,9 +34,10 @@ export const EmployeeList = () => {
 
   const [employees, setEmployees] = useState<EmployeeResponse[]>(mockEmployees);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  
+
   // Edit Employee states
-  const [editingEmployee, setEditingEmployee] = useState<EmployeeResponse | null>(null);
+  const [editingEmployee, setEditingEmployee] =
+    useState<EmployeeResponse | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Filtered Employees (useMemo)
@@ -130,17 +131,17 @@ export const EmployeeList = () => {
     if (!editingEmployee) return;
 
     // Update employee in list
-    setEmployees(prev => 
-      prev.map(emp => 
-        emp.id === editingEmployee.id 
-          ? { 
-              ...emp, 
+    setEmployees((prev) =>
+      prev.map((emp) =>
+        emp.id === editingEmployee.id
+          ? {
+              ...emp,
               ...updatedData,
               updatedAt: new Date().toISOString(),
               user: {
                 ...emp.user!,
-                role: updatedData.role || emp.user?.role || 'EMPLOYEE'
-              }
+                role: updatedData.role || emp.user?.role || "EMPLOYEE",
+              },
             }
           : emp
       )
@@ -268,7 +269,9 @@ export const EmployeeList = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <Phone className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-sm">{employee.phone}</span>
+                        <span className="text-sm">
+                          {formatPhoneNumber(employee.phone)}
+                        </span>
                       </div>
                     </div>
                   </TableCell>
@@ -301,8 +304,8 @@ export const EmployeeList = () => {
                   {/* 액션 */}
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         size="sm"
                         onClick={() => handleEditEmployee(employee)}
                       >

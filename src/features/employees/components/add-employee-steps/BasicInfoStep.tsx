@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { formatPhoneNumber } from "@/lib/formatter";
+import { cleanPhoneNumber, formatPhoneNumber } from "@/lib/formatter";
 
 interface BasicInfoStepProps {
   data: Partial<CreateEmployeeRequest>;
@@ -36,6 +36,20 @@ export const BasicInfoStep = ({
     positionId: data.positionId || "",
     hireDate: data.hireDate || "",
   });
+
+  // Synchronize with data prop changes (for Edit mode)
+  useEffect(() => {
+    setLocalData({
+      firstName: data.firstName || "",
+      lastName: data.lastName || "",
+      middleName: data.middleName || "",
+      email: data.email || "",
+      phone: data.phone || "",
+      departmentId: data.departmentId || "",
+      positionId: data.positionId || "",
+      hireDate: data.hireDate || "",
+    });
+  }, [data]);
 
   // Position list for selected department
   const availablePositions = localData.departmentId
@@ -61,7 +75,7 @@ export const BasicInfoStep = ({
 
   // Format phone number
   const handlePhoneChange = (value: string) => {
-    handleFieldChange("phone", formatPhoneNumber(value));
+    handleFieldChange("phone", cleanPhoneNumber(value));
   };
 
   // Validation
@@ -158,7 +172,7 @@ export const BasicInfoStep = ({
             <Input
               id="phone"
               type="tel"
-              value={localData.phone}
+              value={formatPhoneNumber(localData.phone)}
               onChange={(e) => handlePhoneChange(e.target.value)}
               placeholder="555-123-4567"
             />

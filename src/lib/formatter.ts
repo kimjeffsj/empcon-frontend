@@ -79,3 +79,14 @@ export const calculateAge = (birthDate: string): number | null => {
 export const calculateAnnualSalary = (hourlyRate: number): number => {
   return hourlyRate * 40 * 52; // 40 hours/wk, 52 weeks (1 year)
 };
+
+// Clean format for db
+export const cleanPhoneNumber = (value: string): string => {
+  if (!value) return "";
+  return value.replace(/\D/g, "").slice(0, 10);
+};
+
+export const cleanSIN = (value: string): string => {
+  if (!value) return "";
+  return value.replace(/\D/g, "").slice(0, 9);
+};

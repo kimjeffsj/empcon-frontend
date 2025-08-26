@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import {
   calculateAge,
   calculateAnnualSalary,
+  cleanSIN,
   formatPayRate,
   formatSIN,
 } from "@/lib/formatter";
@@ -35,6 +36,17 @@ export const PayInfoStep = ({
     role: data.role || ("EMPLOYEE" as "EMPLOYEE" | "MANAGER"),
   });
 
+  // Synchronize with data prop changes (for Edit mode)
+  useEffect(() => {
+    setLocalData({
+      payType: data.payType || ("HOURLY" as "HOURLY" | "SALARY"),
+      payRate: data.payRate?.toString() || "",
+      dateOfBirth: data.dateOfBirth || "",
+      sin: data.sin || "",
+      role: data.role || ("EMPLOYEE" as "EMPLOYEE" | "MANAGER"),
+    });
+  }, [data]);
+
   const handleFieldChange = (field: string, value: string | number) => {
     const newData = { ...localData, [field]: value };
     setLocalData(newData);
@@ -57,7 +69,7 @@ export const PayInfoStep = ({
 
   // SIN format (000-000-000)
   const handleSINChange = (value: string) => {
-    handleFieldChange("sin", formatSIN(value));
+    handleFieldChange("sin", cleanSIN(value));
   };
 
   // Pay rate formatting
@@ -229,7 +241,7 @@ export const PayInfoStep = ({
             </Label>
             <Input
               id="sin"
-              value={localData.sin}
+              value={formatSIN(localData.sin)}
               onChange={(e) => handleSINChange(e.target.value)}
               placeholder="000-000-000"
               maxLength={11}
