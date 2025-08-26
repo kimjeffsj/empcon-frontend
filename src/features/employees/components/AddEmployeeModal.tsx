@@ -8,9 +8,9 @@ import {
 } from "@/shared/ui/alert-dialog";
 import { Button } from "@/shared/ui/button";
 import { Progress } from "@/shared/ui/progress";
-import { CreateEmployeeRequest } from "@empcon/types";
+import { CreateEmployeeRequest, EmployeeResponse } from "@empcon/types";
 import { ArrowLeft, ArrowRight, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BasicInfoStep } from "./add-employee-steps/BasicInfoStep";
 import { AddressInfoStep } from "./add-employee-steps/AddressInfoStep";
 import { PayInfoStep } from "./add-employee-steps/PayInfoStep";
@@ -22,6 +22,8 @@ interface AddEmployeeModalProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (employee: CreateEmployeeRequest) => void;
+  mode?: 'create' | 'edit';
+  initialData?: EmployeeResponse;
 }
 
 // Modal Steps
@@ -48,16 +50,54 @@ export const AddEmployeeModal = ({
   open,
   onClose,
   onSubmit,
+  mode = 'create',
+  initialData,
 }: AddEmployeeModalProps) => {
   const currentUserRole = useSelector(
     (state: RootState) => state.auth.user?.role
   );
+
+  // Dynamic content based on mode
+  const modalTitle = mode === 'edit' ? 'Edit Employee' : 'Add New Employee';
+  const submitButtonText = mode === 'edit' ? 'Update Employee' : 'Create Employee';
 
   // Current Steps
   const [currentStep, setCurrentStep] = useState(1);
 
   // Form Data(All steps data management)
   const [formData, setFormData] = useState<Partial<CreateEmployeeRequest>>({});
+
+  // Initialize form data for edit mode
+  useEffect(() => {
+    if (mode === 'edit' && initialData && open) {
+      setFormData({
+        firstName: initialData.firstName,
+        lastName: initialData.lastName,
+        middleName: initialData.middleName,
+        email: initialData.email,
+        phone: initialData.phone,
+        addressLine1: initialData.addressLine1,
+        addressLine2: initialData.addressLine2,
+        city: initialData.city,
+        province: initialData.province,
+        postalCode: initialData.postalCode,
+        dateOfBirth: initialData.dateOfBirth,
+        hireDate: initialData.hireDate,
+        payRate: initialData.payRate,
+        payType: initialData.payType,
+        role: initialData.user?.role,
+        departmentId: initialData.departmentId,
+        positionId: initialData.positionId,
+        managerId: initialData.managerId,
+        sin: '', // Don't pre-fill SIN for security
+        emergencyContactName: initialData.emergencyContactName,
+        emergencyContactPhone: initialData.emergencyContactPhone,
+        notes: initialData.notes,
+      });
+    } else if (mode === 'create' || !open) {
+      setFormData({});
+    }
+  }, [mode, initialData, open]);
 
   // Each steps validation
   const [stepValidation, setStepValidation] = useState({
@@ -160,7 +200,7 @@ export const AddEmployeeModal = ({
         {/* Header */}
         <AlertDialogHeader>
           <div className="flex items-center justify-between">
-            <AlertDialogTitle>Add New Employee</AlertDialogTitle>
+            <AlertDialogTitle>{modalTitle}</AlertDialogTitle>
             <Button variant="ghost" size="sm" onClick={handleClose}>
               <X className="h-4 w-4" />
             </Button>
@@ -214,7 +254,7 @@ export const AddEmployeeModal = ({
                   !stepValidation[currentStep as keyof typeof stepValidation]
                 }
               >
-                Create Employee
+                {submitButtonText}
               </Button>
             ) : (
               <Button

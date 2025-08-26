@@ -34,6 +34,10 @@ export const EmployeeList = () => {
 
   const [employees, setEmployees] = useState<EmployeeResponse[]>(mockEmployees);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  
+  // Edit Employee states
+  const [editingEmployee, setEditingEmployee] = useState<EmployeeResponse | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Filtered Employees (useMemo)
   const filteredEmployees = useMemo(() => {
@@ -114,6 +118,44 @@ export const EmployeeList = () => {
     });
 
     console.log("New employee added:", newEmployee);
+  };
+
+  // Edit Employee handlers
+  const handleEditEmployee = (employee: EmployeeResponse) => {
+    setEditingEmployee(employee);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateEmployee = (updatedData: CreateEmployeeRequest) => {
+    if (!editingEmployee) return;
+
+    // Update employee in list
+    setEmployees(prev => 
+      prev.map(emp => 
+        emp.id === editingEmployee.id 
+          ? { 
+              ...emp, 
+              ...updatedData,
+              updatedAt: new Date().toISOString(),
+              user: {
+                ...emp.user!,
+                role: updatedData.role || emp.user?.role || 'EMPLOYEE'
+              }
+            }
+          : emp
+      )
+    );
+
+    // Success notification
+    toast.success("Employee Updated Successfully", {
+      description: `${updatedData.firstName} ${updatedData.lastName} has been updated.`,
+    });
+
+    // Close modal and reset state
+    setIsEditModalOpen(false);
+    setEditingEmployee(null);
+
+    console.log("Employee updated:", updatedData);
   };
 
   return (
@@ -259,7 +301,11 @@ export const EmployeeList = () => {
                   {/* 액션 */}
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleEditEmployee(employee)}
+                      >
                         <Edit className="h-3 w-3" />
                       </Button>
                       <Button variant="ghost" size="sm">
@@ -288,6 +334,19 @@ export const EmployeeList = () => {
         open={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSubmit={handleAddEmployee}
+        mode="create"
+      />
+
+      {/* Edit Employee Modal */}
+      <AddEmployeeModal
+        open={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingEmployee(null);
+        }}
+        onSubmit={handleUpdateEmployee}
+        mode="edit"
+        initialData={editingEmployee || undefined}
       />
     </div>
   );
