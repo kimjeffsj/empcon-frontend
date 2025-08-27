@@ -65,7 +65,8 @@ export const formatPostalCode = (value: string): string => {
 export const calculateAge = (birthDate: string): number | null => {
   if (!birthDate) return null;
   const today = new Date();
-  const birth = new Date(birthDate);
+  const [year, month, day] = birthDate.split("-").map(Number);
+  const birth = new Date(year, month - 1, day); // calculate in local time
   let age = today.getFullYear() - birth.getFullYear();
   const monthDiff = today.getMonth() - birth.getMonth();
 
@@ -89,4 +90,19 @@ export const cleanPhoneNumber = (value: string): string => {
 export const cleanSIN = (value: string): string => {
   if (!value) return "";
   return value.replace(/\D/g, "").slice(0, 9);
+};
+
+// ==== DATE FORMATTING ====
+
+// User input dates (hireDate, dateOfBirth) - NO timezone conversion
+export const formatUserDate = (dateString: string): string => {
+  if (!dateString) return "";
+  // "2025-09-02" → "09/02/2025"
+  return dateString.replace(/(\d{4})-(\d{2})-(\d{2})/, "$2/$3/$1");
+};
+
+// System timestamps (createdAt, updatedAt) - Convert UTC to local
+export const formatSystemTimestamp = (utcString: string): string => {
+  if (!utcString) return "";
+  return new Date(utcString).toLocaleDateString();
 };

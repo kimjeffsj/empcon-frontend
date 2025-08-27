@@ -25,7 +25,11 @@ import {
 import { AddEmployeeModal } from "./AddEmployeeModal";
 import { toast } from "sonner";
 import { StatusBadge } from "@/shared/components/StatusBadge";
-import { formatPayRate, formatPhoneNumber } from "@/lib/formatter";
+import {
+  formatPayRate,
+  formatPhoneNumber,
+  formatUserDate,
+} from "@/lib/formatter";
 
 export const EmployeeList = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -292,9 +296,7 @@ export const EmployeeList = () => {
                   </TableCell>
 
                   {/* 입사일 */}
-                  <TableCell>
-                    {new Date(employee.hireDate).toLocaleDateString()}
-                  </TableCell>
+                  <TableCell>{formatUserDate(employee.hireDate)}</TableCell>
 
                   {/* 상태 */}
                   <TableCell>

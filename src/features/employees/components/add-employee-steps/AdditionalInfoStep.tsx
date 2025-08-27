@@ -13,6 +13,7 @@ import {
   cleanPhoneNumber,
   formatPayRate,
   formatPhoneNumber,
+  formatUserDate,
 } from "@/lib/formatter";
 
 interface AdditionalInfoStepProps {
@@ -178,7 +179,7 @@ export function AdditionalInfoStep({
                   <p className="text-muted-foreground">Date of Birth</p>
                   <p className="font-medium">
                     {data.dateOfBirth
-                      ? new Date(data.dateOfBirth).toLocaleDateString()
+                      ? formatUserDate(data.dateOfBirth)
                       : "Not specified"}
                   </p>
                 </div>
@@ -215,7 +216,7 @@ export function AdditionalInfoStep({
                   <p className="text-muted-foreground">Hire Date</p>
                   <p className="font-medium">
                     {data.hireDate
-                      ? new Date(data.hireDate).toLocaleDateString()
+                      ? formatUserDate(data.hireDate)
                       : "Not specified"}
                   </p>
                 </div>
