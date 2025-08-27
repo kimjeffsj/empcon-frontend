@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { mockDepartments, mockEmployees } from "../data/mockEmployees";
 import { CreateEmployeeRequest, EmployeeResponse } from "@empcon/types";
 import { Button } from "@/shared/ui/button";
 import { Edit, Mail, Phone, Plus, Search, Trash2 } from "lucide-react";
@@ -30,13 +29,53 @@ import {
   formatPhoneNumber,
   formatUserDate,
 } from "@/lib/formatter";
+import {
+  useCreateEmployeeMutation,
+  useDeleteEmployeeMutation,
+  useGetEmployeesQuery,
+  useUpdateEmployeeMutation,
+} from "@/store/api/employeesApi";
+import { LoadingIndicator } from "@/shared/components/Loading";
+import { ErrorMessage } from "@/shared/components/ErrorMessage";
 
 export const EmployeeList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  const [employees, setEmployees] = useState<EmployeeResponse[]>(mockEmployees);
+  const {
+    data: employeesData,
+    isLoading,
+    error,
+    refetch,
+  } = useGetEmployeesQuery({
+    search: searchTerm || undefined,
+    status: statusFilter === "all" ? undefined : (statusFilter as any),
+    departmentId: departmentFilter === "all" ? undefined : departmentFilter,
+    page: 1,
+    limit: 100,
+  });
+
+  // Mutation hooks
+  const [createEmployee] = useCreateEmployeeMutation();
+  const [updateEmployee] = useUpdateEmployeeMutation();
+  const [deleteEmployee] = useDeleteEmployeeMutation();
+
+  const employees = employeesData?.employees || [];
+
+  const filteredEmployees = employees;
+
+  const departments = useMemo(() => {
+    const deptMap = new Map();
+    employees.forEach((emp) => {
+      if (emp.department) {
+        deptMap.set(emp.department.id, emp.department);
+      }
+    });
+    return Array.from(deptMap.values());
+  }, [employees]);
+
+  // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   // Edit Employee states
@@ -44,85 +83,17 @@ export const EmployeeList = () => {
     useState<EmployeeResponse | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Filtered Employees (useMemo)
-  const filteredEmployees = useMemo(() => {
-    return employees.filter((employee) => {
-      const searchMatch =
-        searchTerm === "" ||
-        employee.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employee.department?.name
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase());
-
-      const departmentMatch =
-        departmentFilter === "all" ||
-        employee.departmentId === departmentFilter;
-
-      const statusMatch =
-        statusFilter === "all" || employee.status === statusFilter;
-
-      return searchMatch && departmentMatch && statusMatch;
-    });
-  }, [employees, searchTerm, departmentFilter, statusFilter]);
-
-  const handleAddEmployee = (employeeData: CreateEmployeeRequest) => {
-    // Mock 데이터로 새 직원 생성
-    const departmentName = mockDepartments.find(
-      (d) => d.id === employeeData.departmentId
-    )?.name;
-
-    const newEmployee: EmployeeResponse = {
-      id: `emp-${Date.now()}`, // 임시 ID
-      employeeNumber: `EMP${Date.now().toString().slice(-9)}`,
-      firstName: employeeData.firstName,
-      lastName: employeeData.lastName,
-      middleName: employeeData.middleName,
-      email: employeeData.email,
-      phone: employeeData.phone,
-      addressLine1: employeeData.addressLine1,
-      addressLine2: employeeData.addressLine2,
-      city: employeeData.city,
-      province: employeeData.province,
-      postalCode: employeeData.postalCode,
-      dateOfBirth: employeeData.dateOfBirth,
-      hireDate: employeeData.hireDate,
-      payRate: employeeData.payRate || 0,
-      payType: employeeData.payType,
-      status: "ACTIVE", // 새 직원은 기본적으로 ACTIVE
-      departmentId: employeeData.departmentId,
-      positionId: employeeData.positionId,
-      managerId: employeeData.managerId,
-      emergencyContactName: employeeData.emergencyContactName,
-      emergencyContactPhone: employeeData.emergencyContactPhone,
-      notes: employeeData.notes,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      user: {
-        id: `user-${Date.now()}`,
-        email: employeeData.email,
-        role: employeeData.role || "EMPLOYEE",
-      },
-      department: {
-        id: employeeData.departmentId,
-        name: departmentName || "Unknown",
-      },
-      position: {
-        id: employeeData.positionId,
-        title: "Position Title", // TODO: position 매핑 추가
-      },
-    };
-
-    // 직원 목록에 추가
-    setEmployees((prev) => [newEmployee, ...prev]);
-
-    // 성공 알림
-    toast.success("Employee Added Successfully", {
-      description: `${newEmployee.firstName} ${newEmployee.lastName} has been added to the system.`,
-    });
-
-    console.log("New employee added:", newEmployee);
+  const handleAddEmployee = async (employeeData: CreateEmployeeRequest) => {
+    try {
+      await createEmployee(employeeData).unwrap();
+      toast.success("Employee Added Successfully", {
+        description: `${employeeData.firstName} ${employeeData.lastName} has been added to the system.`,
+      });
+    } catch (error) {
+      toast.error("Failed to add employee", {
+        description: "Please try again later.",
+      });
+    }
   };
 
   // Edit Employee handlers
@@ -131,37 +102,54 @@ export const EmployeeList = () => {
     setIsEditModalOpen(true);
   };
 
-  const handleUpdateEmployee = (updatedData: CreateEmployeeRequest) => {
+  const handleUpdateEmployee = async (updatedData: CreateEmployeeRequest) => {
     if (!editingEmployee) return;
 
-    // Update employee in list
-    setEmployees((prev) =>
-      prev.map((emp) =>
-        emp.id === editingEmployee.id
-          ? {
-              ...emp,
-              ...updatedData,
-              updatedAt: new Date().toISOString(),
-              user: {
-                ...emp.user!,
-                role: updatedData.role || emp.user?.role || "EMPLOYEE",
-              },
-            }
-          : emp
-      )
-    );
+    try {
+      await updateEmployee({
+        id: editingEmployee.id,
+        data: updatedData,
+      }).unwrap();
 
-    // Success notification
-    toast.success("Employee Updated Successfully", {
-      description: `${updatedData.firstName} ${updatedData.lastName} has been updated.`,
-    });
+      toast.success("Employee Updated Successfully", {
+        description: `${updatedData.firstName} ${updatedData.lastName} has been updated.`,
+      });
 
-    // Close modal and reset state
-    setIsEditModalOpen(false);
-    setEditingEmployee(null);
-
-    console.log("Employee updated:", updatedData);
+      setIsEditModalOpen(false);
+      setEditingEmployee(null);
+    } catch (error) {
+      toast.error("Failed to update employee", {
+        description: "Please try again later.",
+      });
+    }
   };
+
+  const handleDeleteEmployee = async (employee: EmployeeResponse) => {
+    try {
+      await deleteEmployee(employee.id).unwrap();
+      toast.success("Employee Deleted Successfully", {
+        description: `${employee.firstName} ${employee.lastName} has been removed.`,
+      });
+    } catch (error) {
+      toast.error("Failed to delete employee", {
+        description: "Please try again later.",
+      });
+    }
+  };
+
+  if (isLoading) {
+    return <LoadingIndicator message="Loading employees..." />;
+  }
+
+  if (error) {
+    return (
+      <ErrorMessage
+        title="Failed to Load Employees"
+        message="Unable to fetch employee data. Please check your connection and try again."
+        onRetry={refetch}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -204,7 +192,7 @@ export const EmployeeList = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Departments</SelectItem>
-                {mockDepartments.map((dept) => (
+                {departments.map((dept) => (
                   <SelectItem key={dept.id} value={dept.id}>
                     {dept.name}
                   </SelectItem>
@@ -313,7 +301,11 @@ export const EmployeeList = () => {
                       >
                         <Edit className="h-3 w-3" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteEmployee(employee)}
+                      >
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>

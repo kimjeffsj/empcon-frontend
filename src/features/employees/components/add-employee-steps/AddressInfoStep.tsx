@@ -169,7 +169,7 @@ export const AddressInfoStep = ({
           </Label>
           <Input
             id="postalCode"
-            value={localData.postalCode}
+            value={formatPostalCode(localData.postalCode)}
             onChange={(e) => handlePostalCodeChange(e.target.value)}
             placeholder="A1A 1A1"
             maxLength={7}

@@ -4,13 +4,15 @@ export const formatPayRate = (
   payType: "HOURLY" | "SALARY"
 ): string => {
   if (payType === "HOURLY") {
-    return `$${payRate.toFixed(2)}/hr`;
+    return `$${Number(payRate).toFixed(2)}/hr`;
   }
   return `$${payRate.toLocaleString()}/yr`;
 };
 
 // Phone number (Canadian)
 export const formatPhoneNumber = (value: string): string => {
+  if (!value) return "";
+
   let cleaned = value.replace(/\D/g, "");
 
   if (cleaned.length > 10) {
@@ -31,6 +33,8 @@ export const formatPhoneNumber = (value: string): string => {
 
 // SIN
 export const formatSIN = (value: string): string => {
+  if (!value) return "";
+
   let cleaned = value.replace(/\D/g, "");
 
   if (cleaned.length > 9) {
@@ -49,6 +53,8 @@ export const formatSIN = (value: string): string => {
 
 // Postal Code
 export const formatPostalCode = (value: string): string => {
+  if (!value) return "";
+
   let cleaned = value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
 
   if (cleaned.length > 6) {
@@ -64,6 +70,7 @@ export const formatPostalCode = (value: string): string => {
 // Age
 export const calculateAge = (birthDate: string): number | null => {
   if (!birthDate) return null;
+
   const today = new Date();
   const [year, month, day] = birthDate.split("-").map(Number);
   const birth = new Date(year, month - 1, day); // calculate in local time
@@ -84,11 +91,13 @@ export const calculateAnnualSalary = (hourlyRate: number): number => {
 // Clean format for db
 export const cleanPhoneNumber = (value: string): string => {
   if (!value) return "";
+
   return value.replace(/\D/g, "").slice(0, 10);
 };
 
 export const cleanSIN = (value: string): string => {
   if (!value) return "";
+
   return value.replace(/\D/g, "").slice(0, 9);
 };
 
