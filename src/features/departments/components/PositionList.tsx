@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Card, CardContent } from "@/shared/ui/card";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import {
@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/shared/ui/alert-dialog";
-import { Plus, Edit, Trash2, Users } from "lucide-react";
+import { Edit, Trash2, Users } from "lucide-react";
 import {
   useGetPositionsQuery,
   useCreatePositionMutation,
@@ -33,10 +33,20 @@ import { toast } from "sonner";
 interface PositionListProps {
   searchTerm: string;
   departments: DepartmentResponse[];
+  departmentFilter?: string;
   onPositionChange?: () => void;
+  triggerAdd?: boolean;
+  onAddTriggered?: () => void;
 }
 
-export function PositionList({ searchTerm, departments, onPositionChange }: PositionListProps) {
+export function PositionList({ 
+  searchTerm, 
+  departments, 
+  departmentFilter = "all",
+  onPositionChange,
+  triggerAdd,
+  onAddTriggered 
+}: PositionListProps) {
   const [isPosDialogOpen, setIsPosDialogOpen] = useState(false);
   const [editingPosition, setEditingPosition] = useState<PositionResponse | null>(null);
 
@@ -45,6 +55,14 @@ export function PositionList({ searchTerm, departments, onPositionChange }: Posi
   const [createPosition, { isLoading: isCreatingPos }] = useCreatePositionMutation();
   const [updatePosition, { isLoading: isUpdatingPos }] = useUpdatePositionMutation();
   const [deletePosition] = useDeletePositionMutation();
+
+  // Handle external trigger for Add Position
+  useEffect(() => {
+    if (triggerAdd) {
+      openAddPositionDialog();
+      onAddTriggered?.();
+    }
+  }, [triggerAdd, onAddTriggered]);
 
   // CRUD Handlers
   const handleCreatePosition = async (data: {
@@ -134,31 +152,29 @@ export function PositionList({ searchTerm, departments, onPositionChange }: Posi
   };
 
   // Filter data
-  const filteredPositions = positions.filter(
-    (pos) =>
+  const filteredPositions = positions.filter((pos) => {
+    // Search filter
+    const matchesSearch = 
       pos.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      pos.department.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      pos.department.name.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Department filter
+    const matchesDepartment = 
+      departmentFilter === "all" || pos.departmentId === departmentFilter;
+    
+    return matchesSearch && matchesDepartment;
+  });
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h3>Position Management</h3>
-          <p className="text-sm text-muted-foreground">
-            Define job positions, levels, and salary ranges.
-          </p>
-        </div>
-        <Button onClick={openAddPositionDialog}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Position
-        </Button>
-      </div>
-
       {/* Positions Table */}
       <Card>
-        <CardContent className="p-0">
+        <CardHeader>
+          <CardTitle>
+            Position List ({filteredPositions.length} positions)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
           <Table>
             <TableHeader>
               <TableRow>

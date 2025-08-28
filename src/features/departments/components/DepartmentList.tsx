@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Card, CardContent } from "@/shared/ui/card";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import {
   Table,
@@ -17,7 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/shared/ui/alert-dialog";
-import { Plus, Edit, Trash2, Users } from "lucide-react";
+import { Edit, Trash2, Users } from "lucide-react";
 import {
   useGetDepartmentsQuery,
   useCreateDepartmentMutation,
@@ -31,9 +31,16 @@ import { toast } from "sonner";
 interface DepartmentListProps {
   searchTerm: string;
   onDepartmentChange?: () => void;
+  triggerAdd?: boolean;
+  onAddTriggered?: () => void;
 }
 
-export function DepartmentList({ searchTerm, onDepartmentChange }: DepartmentListProps) {
+export function DepartmentList({ 
+  searchTerm, 
+  onDepartmentChange, 
+  triggerAdd, 
+  onAddTriggered 
+}: DepartmentListProps) {
   const [isDeptDialogOpen, setIsDeptDialogOpen] = useState(false);
   const [editingDepartment, setEditingDepartment] = useState<DepartmentResponse | null>(null);
 
@@ -43,8 +50,16 @@ export function DepartmentList({ searchTerm, onDepartmentChange }: DepartmentLis
   const [updateDepartment, { isLoading: isUpdatingDept }] = useUpdateDepartmentMutation();
   const [deleteDepartment] = useDeleteDepartmentMutation();
 
-  // CRUD Handlers
-  const handleCreateDepartment = async (data: { name: string; description?: string }) => {
+  // Handle external trigger for Add Department
+  useEffect(() => {
+    if (triggerAdd) {
+      openAddDepartmentDialog();
+      onAddTriggered?.();
+    }
+  }, [triggerAdd, onAddTriggered]);
+
+  // CRUD Handlers  
+  const handleCreateDepartment = async (data: { name: string; description?: string; managerId?: string }) => {
     try {
       const result = await createDepartment(data).unwrap();
       setIsDeptDialogOpen(false);
@@ -61,7 +76,7 @@ export function DepartmentList({ searchTerm, onDepartmentChange }: DepartmentLis
     }
   };
 
-  const handleUpdateDepartment = async (data: { name: string; description?: string }) => {
+  const handleUpdateDepartment = async (data: { name: string; description?: string; managerId?: string }) => {
     if (!editingDepartment) return;
 
     try {
@@ -131,23 +146,14 @@ export function DepartmentList({ searchTerm, onDepartmentChange }: DepartmentLis
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h3>Department Management</h3>
-          <p className="text-sm text-muted-foreground">
-            Manage organizational departments and their structure.
-          </p>
-        </div>
-        <Button onClick={openAddDepartmentDialog}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Department
-        </Button>
-      </div>
-
       {/* Departments Table */}
       <Card>
-        <CardContent className="p-0">
+        <CardHeader>
+          <CardTitle>
+            Department List ({filteredDepartments.length} departments)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
