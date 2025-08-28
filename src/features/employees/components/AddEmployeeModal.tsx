@@ -22,7 +22,7 @@ interface AddEmployeeModalProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (employee: CreateEmployeeRequest) => void;
-  mode?: 'create' | 'edit';
+  mode?: "create" | "edit";
   initialData?: EmployeeResponse;
 }
 
@@ -50,7 +50,7 @@ export const AddEmployeeModal = ({
   open,
   onClose,
   onSubmit,
-  mode = 'create',
+  mode = "create",
   initialData,
 }: AddEmployeeModalProps) => {
   const currentUserRole = useSelector(
@@ -58,8 +58,9 @@ export const AddEmployeeModal = ({
   );
 
   // Dynamic content based on mode
-  const modalTitle = mode === 'edit' ? 'Edit Employee' : 'Add New Employee';
-  const submitButtonText = mode === 'edit' ? 'Update Employee' : 'Create Employee';
+  const modalTitle = mode === "edit" ? "Edit Employee" : "Add New Employee";
+  const submitButtonText =
+    mode === "edit" ? "Update Employee" : "Create Employee";
 
   // Current Steps
   const [currentStep, setCurrentStep] = useState(1);
@@ -69,7 +70,7 @@ export const AddEmployeeModal = ({
 
   // Initialize form data for edit mode
   useEffect(() => {
-    if (mode === 'edit' && initialData && open) {
+    if (mode === "edit" && initialData && open) {
       setFormData({
         firstName: initialData.firstName,
         lastName: initialData.lastName,
@@ -89,12 +90,12 @@ export const AddEmployeeModal = ({
         departmentId: initialData.departmentId,
         positionId: initialData.positionId,
         managerId: initialData.managerId,
-        sin: '', // Don't pre-fill SIN for security
+        sin: "", // Don't pre-fill SIN for security
         emergencyContactName: initialData.emergencyContactName,
         emergencyContactPhone: initialData.emergencyContactPhone,
         notes: initialData.notes,
       });
-    } else if (mode === 'create' || !open) {
+    } else if (mode === "create" || !open) {
       setFormData({});
     }
   }, [mode, initialData, open]);
@@ -128,7 +129,6 @@ export const AddEmployeeModal = ({
 
   // Submit
   const handleSubmit = () => {
-    // TODO: Submit logic here
     console.log("Final form data: ", formData);
     onSubmit(formData as CreateEmployeeRequest);
     handleClose();
@@ -147,32 +147,52 @@ export const AddEmployeeModal = ({
 
   // Change detection for Edit mode
   const hasChanges = useMemo(() => {
-    if (mode === 'create') return true; // Always allow creation
+    if (mode === "create") return true; // Always allow creation
     if (!initialData) return true; // No initial data to compare
 
     // Compare important fields to detect changes
     const fieldsToCompare: (keyof CreateEmployeeRequest)[] = [
-      'firstName', 'lastName', 'middleName', 'email', 'phone',
-      'addressLine1', 'addressLine2', 'city', 'province', 'postalCode',
-      'dateOfBirth', 'hireDate', 'payRate', 'payType', 'role',
-      'departmentId', 'positionId', 'managerId',
-      'emergencyContactName', 'emergencyContactPhone', 'notes'
+      "firstName",
+      "lastName",
+      "middleName",
+      "email",
+      "phone",
+      "addressLine1",
+      "addressLine2",
+      "city",
+      "province",
+      "postalCode",
+      "dateOfBirth",
+      "hireDate",
+      "payRate",
+      "payType",
+      "role",
+      "departmentId",
+      "positionId",
+      "managerId",
+      "emergencyContactName",
+      "emergencyContactPhone",
+      "notes",
     ];
 
     // Check regular fields
-    const hasRegularChanges = fieldsToCompare.some(field => {
+    const hasRegularChanges = fieldsToCompare.some((field) => {
       const currentValue = formData[field];
-      const initialValue = field === 'role' 
-        ? initialData.user?.role 
-        : initialData[field as keyof EmployeeResponse];
-      
+      const initialValue =
+        field === "role"
+          ? initialData.user?.role
+          : initialData[field as keyof EmployeeResponse];
+
       // Handle different data types
-      if (typeof currentValue === 'number' && typeof initialValue === 'number') {
+      if (
+        typeof currentValue === "number" &&
+        typeof initialValue === "number"
+      ) {
         return currentValue !== initialValue;
       }
-      
+
       // Convert to string for comparison (handles undefined/null)
-      return String(currentValue || '') !== String(initialValue || '');
+      return String(currentValue || "") !== String(initialValue || "");
     });
 
     // Check SIN changes - if SIN field has any value, it means it was edited
@@ -292,7 +312,7 @@ export const AddEmployeeModal = ({
                 onClick={handleSubmit}
                 disabled={
                   !stepValidation[currentStep as keyof typeof stepValidation] ||
-                  (mode === 'edit' && !hasChanges)
+                  (mode === "edit" && !hasChanges)
                 }
               >
                 {submitButtonText}

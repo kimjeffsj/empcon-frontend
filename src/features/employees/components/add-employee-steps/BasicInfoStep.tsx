@@ -2,7 +2,6 @@
 
 import { CreateEmployeeRequest, EmployeeResponse } from "@empcon/types";
 import { useEffect, useState, useCallback } from "react";
-import { mockDepartments, mockPositions } from "../../data/mockEmployees";
 import { Label } from "@/shared/ui/label";
 import { Input } from "@/shared/ui/input";
 import {
@@ -14,6 +13,8 @@ import {
 } from "@/shared/ui/select";
 import { cleanPhoneNumber, formatPhoneNumber } from "@/lib/formatter";
 import { useLazyValidateEmailQuery } from "@/store/api/employeesApi";
+import { useGetDepartmentsQuery } from "@/store/api/departmentsApi";
+import { useGetPositionsQuery } from "@/store/api/positionsApi";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 
 interface BasicInfoStepProps {
@@ -56,6 +57,12 @@ export const BasicInfoStep = ({
 
   // Email validation hook
   const [validateEmailTrigger] = useLazyValidateEmailQuery();
+
+  // API hooks
+  const { data: departments = [], isLoading: departmentsLoading } = useGetDepartmentsQuery();
+  const { data: positions = [], isLoading: positionsLoading } = useGetPositionsQuery({
+    departmentId: localData.departmentId || undefined
+  });
 
   // Email validation function
   const validateEmail = useCallback(async (email: string) => {
@@ -120,10 +127,8 @@ export const BasicInfoStep = ({
     });
   }, [data]);
 
-  // Position list for selected department
-  const availablePositions = localData.departmentId
-    ? mockPositions[localData.departmentId as keyof typeof mockPositions] || []
-    : [];
+  // Position list for selected department (filtered by API)
+  const availablePositions = positions;
 
   // Reset position when department changed
   const handleDepartmentChange = (departmentId: string) => {
@@ -305,12 +310,17 @@ export const BasicInfoStep = ({
             <Select
               value={localData.departmentId}
               onValueChange={handleDepartmentChange}
+              disabled={departmentsLoading}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select department" />
+                <SelectValue placeholder={
+                  departmentsLoading 
+                    ? "Loading departments..." 
+                    : "Select department"
+                } />
               </SelectTrigger>
               <SelectContent>
-                {mockDepartments.map((dept) => (
+                {departments.map((dept) => (
                   <SelectItem key={dept.id} value={dept.id}>
                     {dept.name}
                   </SelectItem>
@@ -325,14 +335,16 @@ export const BasicInfoStep = ({
             <Select
               value={localData.positionId}
               onValueChange={(value) => handleFieldChange("positionId", value)}
-              disabled={!localData.departmentId}
+              disabled={!localData.departmentId || positionsLoading}
             >
               <SelectTrigger>
                 <SelectValue
                   placeholder={
-                    localData.departmentId
-                      ? "Select position"
-                      : "Select department first"
+                    !localData.departmentId
+                      ? "Select department first"
+                      : positionsLoading
+                      ? "Loading positions..."
+                      : "Select position"
                   }
                 />
               </SelectTrigger>

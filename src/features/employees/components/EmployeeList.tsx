@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CreateEmployeeRequest, EmployeeResponse } from "@empcon/types";
+import { CreateEmployeeRequest, EmployeeResponse, EmployeeStatus } from "@empcon/types";
 import { Button } from "@/shared/ui/button";
 import { Edit, Mail, Phone, Plus, Search, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -50,7 +50,7 @@ export const EmployeeList = () => {
     refetch,
   } = useGetEmployeesQuery({
     search: searchTerm || undefined,
-    status: statusFilter === "all" ? undefined : (statusFilter as any),
+    status: statusFilter === "all" ? undefined : (statusFilter as EmployeeStatus),
     departmentId: departmentFilter === "all" ? undefined : departmentFilter,
     page: 1,
     limit: 100,

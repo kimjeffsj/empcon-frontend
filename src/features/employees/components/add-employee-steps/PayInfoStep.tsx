@@ -6,14 +6,13 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { Button } from "@/shared/ui/button";
 import { CreateEmployeeRequest, EmployeeResponse } from "@empcon/types";
-import { Calendar, DollarSign, Edit3, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Calendar, DollarSign, Edit3, EyeOff, Loader2 } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
 import { useLazyGetEmployeeSINQuery } from "@/store/api/employeesApi";
 import {
   calculateAge,
   calculateAnnualSalary,
   cleanSIN,
-  formatPayRate,
   formatSIN,
 } from "@/lib/formatter";
 
@@ -22,7 +21,7 @@ interface PayInfoStepProps {
   onUpdate: (data: Partial<CreateEmployeeRequest>) => void;
   onValidationChange: (isValid: boolean) => void;
   currentUserRole?: "ADMIN" | "MANAGER" | "EMPLOYEE";
-  mode?: 'create' | 'edit';
+  mode?: "create" | "edit";
   initialData?: EmployeeResponse;
 }
 
@@ -31,7 +30,7 @@ export const PayInfoStep = ({
   onUpdate,
   onValidationChange,
   currentUserRole = "ADMIN",
-  mode = 'create',
+  mode = "create",
   initialData,
 }: PayInfoStepProps) => {
   const [localData, setLocalData] = useState({
@@ -46,13 +45,14 @@ export const PayInfoStep = ({
   const [isEditingSIN, setIsEditingSIN] = useState(false);
   const [isLoadingSIN, setIsLoadingSIN] = useState(false);
   const [fullSIN, setFullSIN] = useState("");
-  
+
   // SIN API hook
   const [getSINTrigger] = useLazyGetEmployeeSINQuery();
 
   // Check if we're in edit mode with existing SIN
-  const hasExistingSIN = mode === 'edit' && initialData?.hasSIN;
-  const maskedSIN = mode === 'edit' && initialData?.sinMasked ? initialData.sinMasked : "";
+  const hasExistingSIN = mode === "edit" && initialData?.hasSIN;
+  const maskedSIN =
+    mode === "edit" && initialData?.sinMasked ? initialData.sinMasked : "";
 
   // Toggle SIN editing mode
   const handleToggleSINEdit = useCallback(async () => {
@@ -66,17 +66,17 @@ export const PayInfoStep = ({
         setFullSIN(result.sin);
         const newData = { ...localData, sin: result.sin };
         setLocalData(newData);
-        
+
         // Update parent formData with loaded SIN
         const updateData = {
           ...newData,
-          payRate: parseFloat(newData.payRate) || 0
+          payRate: parseFloat(newData.payRate) || 0,
         };
         onUpdate(updateData);
-        
+
         setIsEditingSIN(true);
       } catch (error) {
-        console.error('Failed to load SIN:', error);
+        console.error("Failed to load SIN:", error);
       } finally {
         setIsLoadingSIN(false);
       }
@@ -86,15 +86,22 @@ export const PayInfoStep = ({
       setFullSIN("");
       const newData = { ...localData, sin: "" };
       setLocalData(newData);
-      
+
       // Update parent formData to clear SIN
       const updateData = {
         ...newData,
-        payRate: parseFloat(newData.payRate) || 0
+        payRate: parseFloat(newData.payRate) || 0,
       };
       onUpdate(updateData);
     }
-  }, [hasExistingSIN, initialData?.id, isEditingSIN, getSINTrigger, localData, onUpdate]);
+  }, [
+    hasExistingSIN,
+    initialData?.id,
+    isEditingSIN,
+    getSINTrigger,
+    localData,
+    onUpdate,
+  ]);
 
   // Synchronize with data prop changes (for Edit mode)
   useEffect(() => {
@@ -152,14 +159,12 @@ export const PayInfoStep = ({
 
     // Check required fields (SIN is conditional in edit mode)
     const baseRequiredFields =
-      !!localData.payType &&
-      !!localData.payRate &&
-      !!localData.dateOfBirth;
+      !!localData.payType && !!localData.payRate && !!localData.dateOfBirth;
 
     // SIN validation logic based on mode and editing state
     let sinValid = true;
-    
-    if (mode === 'create') {
+
+    if (mode === "create") {
       // Create mode: SIN is required and must be valid
       if (!localData.sin) {
         sinValid = false;
@@ -167,7 +172,7 @@ export const PayInfoStep = ({
         const sinDigits = localData.sin.replace(/\D/g, "");
         sinValid = sinDigits.length === 9;
       }
-    } else if (mode === 'edit') {
+    } else if (mode === "edit") {
       if (hasExistingSIN && !isEditingSIN) {
         // Edit mode: Has existing SIN and not editing = always valid
         sinValid = true;
@@ -319,7 +324,8 @@ export const PayInfoStep = ({
             <div className="flex items-center justify-between">
               <Label htmlFor="sin">
                 Social Insurance Number (SIN){" "}
-                {(mode === 'create' || (mode === 'edit' && (!hasExistingSIN || isEditingSIN))) && (
+                {(mode === "create" ||
+                  (mode === "edit" && (!hasExistingSIN || isEditingSIN))) && (
                   <span className="text-red-500">*</span>
                 )}
               </Label>
@@ -348,9 +354,11 @@ export const PayInfoStep = ({
                 </Button>
               )}
             </div>
-            
+
             {/* SIN Input */}
-            {(mode === 'create' || (hasExistingSIN && isEditingSIN) || (!hasExistingSIN)) ? (
+            {mode === "create" ||
+            (hasExistingSIN && isEditingSIN) ||
+            !hasExistingSIN ? (
               <Input
                 id="sin"
                 value={formatSIN(localData.sin)}
@@ -368,12 +376,11 @@ export const PayInfoStep = ({
                 placeholder="xxx-xxx-xxx"
               />
             )}
-            
+
             <p className="text-xs text-muted-foreground">
-              {hasExistingSIN && !isEditingSIN 
+              {hasExistingSIN && !isEditingSIN
                 ? "SIN is securely stored. Click 'Edit SIN' to modify."
-                : "SIN will be encrypted and securely stored"
-              }
+                : "SIN will be encrypted and securely stored"}
             </p>
           </div>
         </div>
