@@ -186,6 +186,8 @@ export const AddEmployeeModal = ({
             onValidationChange={(isValid) =>
               setStepValidation((prev) => ({ ...prev, 1: isValid }))
             }
+            mode={mode}
+            initialData={initialData}
           />
         );
       case 2:

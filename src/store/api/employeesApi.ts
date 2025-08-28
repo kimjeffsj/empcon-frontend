@@ -73,6 +73,18 @@ export const employeesApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Employee"],
     }),
+
+    // GET /api/employees/validate/email - 이메일 중복 검증
+    validateEmail: builder.query<{ available: boolean; message: string }, string>({
+      query: (email) => `/employees/validate/email?email=${encodeURIComponent(email)}`,
+      transformResponse: (response: { success: boolean; data: { available: boolean; message: string } }) => response.data,
+    }),
+
+    // GET /api/employees/validate/employee-number - 직원번호 중복 검증
+    validateEmployeeNumber: builder.query<{ available: boolean; message: string }, string>({
+      query: (number) => `/employees/validate/employee-number?number=${encodeURIComponent(number)}`,
+      transformResponse: (response: { success: boolean; data: { available: boolean; message: string } }) => response.data,
+    }),
   }),
 });
 
@@ -82,4 +94,6 @@ export const {
   useCreateEmployeeMutation,
   useUpdateEmployeeMutation,
   useDeleteEmployeeMutation,
+  useLazyValidateEmailQuery,
+  useLazyValidateEmployeeNumberQuery,
 } = employeesApi;

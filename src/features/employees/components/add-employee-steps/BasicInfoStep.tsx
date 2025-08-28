@@ -1,7 +1,7 @@
 "use client";
 
-import { CreateEmployeeRequest } from "@empcon/types";
-import { useEffect, useState } from "react";
+import { CreateEmployeeRequest, EmployeeResponse } from "@empcon/types";
+import { useEffect, useState, useCallback } from "react";
 import { mockDepartments, mockPositions } from "../../data/mockEmployees";
 import { Label } from "@/shared/ui/label";
 import { Input } from "@/shared/ui/input";
@@ -13,17 +13,23 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { cleanPhoneNumber, formatPhoneNumber } from "@/lib/formatter";
+import { useLazyValidateEmailQuery } from "@/store/api/employeesApi";
+import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 
 interface BasicInfoStepProps {
   data: Partial<CreateEmployeeRequest>;
   onUpdate: (data: Partial<CreateEmployeeRequest>) => void;
   onValidationChange: (isValid: boolean) => void;
+  mode?: 'create' | 'edit';
+  initialData?: EmployeeResponse;
 }
 
 export const BasicInfoStep = ({
   data,
   onUpdate,
   onValidationChange,
+  mode = 'create',
+  initialData,
 }: BasicInfoStepProps) => {
   // Local state
   const [localData, setLocalData] = useState({
@@ -36,6 +42,69 @@ export const BasicInfoStep = ({
     positionId: data.positionId || "",
     hireDate: data.hireDate || "",
   });
+
+  // Email validation state
+  const [emailValidationState, setEmailValidationState] = useState<{
+    isValidating: boolean;
+    isValid: boolean | null;
+    message: string;
+  }>({
+    isValidating: false,
+    isValid: null,
+    message: "",
+  });
+
+  // Email validation hook
+  const [validateEmailTrigger] = useLazyValidateEmailQuery();
+
+  // Email validation function
+  const validateEmail = useCallback(async (email: string) => {
+    // Skip validation if email is empty or invalid format
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailValidationState({
+        isValidating: false,
+        isValid: null,
+        message: "",
+      });
+      return;
+    }
+
+    // Skip validation in edit mode if email hasn't changed
+    if (mode === 'edit' && initialData && email === initialData.email) {
+      setEmailValidationState({
+        isValidating: false,
+        isValid: true,
+        message: "Current email",
+      });
+      return;
+    }
+
+    setEmailValidationState({
+      isValidating: true,
+      isValid: null,
+      message: "Checking availability...",
+    });
+
+    try {
+      const result = await validateEmailTrigger(email).unwrap();
+      setEmailValidationState({
+        isValidating: false,
+        isValid: result.available,
+        message: result.message,
+      });
+    } catch (error) {
+      setEmailValidationState({
+        isValidating: false,
+        isValid: false,
+        message: "Error checking email availability",
+      });
+    }
+  }, [mode, initialData, validateEmailTrigger]);
+
+  // Handle email blur
+  const handleEmailBlur = useCallback(() => {
+    validateEmail(localData.email);
+  }, [localData.email, validateEmail]);
 
   // Synchronize with data prop changes (for Edit mode)
   useEffect(() => {
@@ -96,18 +165,23 @@ export const BasicInfoStep = ({
     );
 
     // Check email format
-    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(localData.email);
+    const emailFormatValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(localData.email);
 
     // Check phone number length
     const phoneValid = localData.phone.replace(/\D/g, "").length >= 10;
 
-    return hasAllRequired && emailValid && phoneValid;
+    // Email availability validation - only check if we have validation result
+    const emailAvailabilityValid = 
+      emailValidationState.isValid === null || // No validation attempted yet
+      emailValidationState.isValid === true;   // Email is available
+
+    return hasAllRequired && emailFormatValid && phoneValid && emailAvailabilityValid;
   };
 
   // Update validation state
   useEffect(() => {
     onValidationChange(validateStep());
-  }, [localData]);
+  }, [localData, emailValidationState]);
 
   return (
     <div className="space-y-6">
@@ -157,13 +231,53 @@ export const BasicInfoStep = ({
             <Label htmlFor="email">
               Email <span className="text-red-500">*</span>
             </Label>
-            <Input
-              id="email"
-              type="email"
-              value={localData.email}
-              onChange={(e) => handleFieldChange("email", e.target.value)}
-              placeholder="john.doe@company.com"
-            />
+            <div className="relative">
+              <Input
+                id="email"
+                type="email"
+                value={localData.email}
+                onChange={(e) => handleFieldChange("email", e.target.value)}
+                onBlur={handleEmailBlur}
+                placeholder="john.doe@company.com"
+                className={
+                  emailValidationState.isValid === false
+                    ? "border-red-500"
+                    : emailValidationState.isValid === true
+                    ? "border-green-500"
+                    : ""
+                }
+              />
+              {/* Email validation status icon */}
+              {emailValidationState.isValidating && (
+                <div className="absolute right-2 top-2.5">
+                  <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
+                </div>
+              )}
+              {!emailValidationState.isValidating && emailValidationState.isValid === true && (
+                <div className="absolute right-2 top-2.5">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                </div>
+              )}
+              {!emailValidationState.isValidating && emailValidationState.isValid === false && (
+                <div className="absolute right-2 top-2.5">
+                  <XCircle className="h-4 w-4 text-red-500" />
+                </div>
+              )}
+            </div>
+            {/* Email validation message */}
+            {emailValidationState.message && (
+              <p
+                className={`text-xs ${
+                  emailValidationState.isValid === false
+                    ? "text-red-500"
+                    : emailValidationState.isValid === true
+                    ? "text-green-600"
+                    : "text-gray-500"
+                }`}
+              >
+                {emailValidationState.message}
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="phone">
