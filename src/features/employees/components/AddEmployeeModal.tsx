@@ -159,7 +159,8 @@ export const AddEmployeeModal = ({
       'emergencyContactName', 'emergencyContactPhone', 'notes'
     ];
 
-    return fieldsToCompare.some(field => {
+    // Check regular fields
+    const hasRegularChanges = fieldsToCompare.some(field => {
       const currentValue = formData[field];
       const initialValue = field === 'role' 
         ? initialData.user?.role 
@@ -173,6 +174,11 @@ export const AddEmployeeModal = ({
       // Convert to string for comparison (handles undefined/null)
       return String(currentValue || '') !== String(initialValue || '');
     });
+
+    // Check SIN changes - if SIN field has any value, it means it was edited
+    const hasSINChanges = !!(formData.sin && formData.sin.trim());
+
+    return hasRegularChanges || hasSINChanges;
   }, [mode, initialData, formData]);
 
   // 현재 단계 컴포넌트 렌더링
@@ -209,6 +215,8 @@ export const AddEmployeeModal = ({
               setStepValidation((prev) => ({ ...prev, 3: isValid }))
             }
             currentUserRole={currentUserRole}
+            mode={mode}
+            initialData={initialData}
           />
         );
       case 4:

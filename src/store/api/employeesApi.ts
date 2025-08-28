@@ -85,6 +85,12 @@ export const employeesApi = baseApi.injectEndpoints({
       query: (number) => `/employees/validate/employee-number?number=${encodeURIComponent(number)}`,
       transformResponse: (response: { success: boolean; data: { available: boolean; message: string } }) => response.data,
     }),
+
+    // GET /api/employees/:id/sin - SIN 별도 조회 (ADMIN 전용)
+    getEmployeeSIN: builder.query<{ sin: string }, string>({
+      query: (id) => `/employees/${id}/sin`,
+      transformResponse: (response: { success: boolean; data: { sin: string } }) => response.data,
+    }),
   }),
 });
 
@@ -96,4 +102,5 @@ export const {
   useDeleteEmployeeMutation,
   useLazyValidateEmailQuery,
   useLazyValidateEmployeeNumberQuery,
+  useLazyGetEmployeeSINQuery,
 } = employeesApi;

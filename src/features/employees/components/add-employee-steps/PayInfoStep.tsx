@@ -4,9 +4,11 @@ import { RadioGroup, RadioGroupItem } from "@/shared/ui/radio-group";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
-import { CreateEmployeeRequest } from "@empcon/types";
-import { Calendar, DollarSign } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Button } from "@/shared/ui/button";
+import { CreateEmployeeRequest, EmployeeResponse } from "@empcon/types";
+import { Calendar, DollarSign, Edit3, Eye, EyeOff, Loader2 } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { useLazyGetEmployeeSINQuery } from "@/store/api/employeesApi";
 import {
   calculateAge,
   calculateAnnualSalary,
@@ -20,6 +22,8 @@ interface PayInfoStepProps {
   onUpdate: (data: Partial<CreateEmployeeRequest>) => void;
   onValidationChange: (isValid: boolean) => void;
   currentUserRole?: "ADMIN" | "MANAGER" | "EMPLOYEE";
+  mode?: 'create' | 'edit';
+  initialData?: EmployeeResponse;
 }
 
 export const PayInfoStep = ({
@@ -27,6 +31,8 @@ export const PayInfoStep = ({
   onUpdate,
   onValidationChange,
   currentUserRole = "ADMIN",
+  mode = 'create',
+  initialData,
 }: PayInfoStepProps) => {
   const [localData, setLocalData] = useState({
     payType: data.payType || ("HOURLY" as "HOURLY" | "SALARY"),
@@ -35,6 +41,60 @@ export const PayInfoStep = ({
     sin: data.sin || "",
     role: data.role || ("EMPLOYEE" as "EMPLOYEE" | "MANAGER"),
   });
+
+  // SIN editing and viewing state
+  const [isEditingSIN, setIsEditingSIN] = useState(false);
+  const [isLoadingSIN, setIsLoadingSIN] = useState(false);
+  const [fullSIN, setFullSIN] = useState("");
+  
+  // SIN API hook
+  const [getSINTrigger] = useLazyGetEmployeeSINQuery();
+
+  // Check if we're in edit mode with existing SIN
+  const hasExistingSIN = mode === 'edit' && initialData?.hasSIN;
+  const maskedSIN = mode === 'edit' && initialData?.sinMasked ? initialData.sinMasked : "";
+
+  // Toggle SIN editing mode
+  const handleToggleSINEdit = useCallback(async () => {
+    if (!hasExistingSIN || !initialData?.id) return;
+
+    if (!isEditingSIN) {
+      // Load full SIN when entering edit mode
+      setIsLoadingSIN(true);
+      try {
+        const result = await getSINTrigger(initialData.id).unwrap();
+        setFullSIN(result.sin);
+        const newData = { ...localData, sin: result.sin };
+        setLocalData(newData);
+        
+        // Update parent formData with loaded SIN
+        const updateData = {
+          ...newData,
+          payRate: parseFloat(newData.payRate) || 0
+        };
+        onUpdate(updateData);
+        
+        setIsEditingSIN(true);
+      } catch (error) {
+        console.error('Failed to load SIN:', error);
+      } finally {
+        setIsLoadingSIN(false);
+      }
+    } else {
+      // Cancel editing - clear SIN from both local and parent data
+      setIsEditingSIN(false);
+      setFullSIN("");
+      const newData = { ...localData, sin: "" };
+      setLocalData(newData);
+      
+      // Update parent formData to clear SIN
+      const updateData = {
+        ...newData,
+        payRate: parseFloat(newData.payRate) || 0
+      };
+      onUpdate(updateData);
+    }
+  }, [hasExistingSIN, initialData?.id, isEditingSIN, getSINTrigger, localData, onUpdate]);
 
   // Synchronize with data prop changes (for Edit mode)
   useEffect(() => {
@@ -90,12 +150,37 @@ export const PayInfoStep = ({
   const validateStep = () => {
     const payRateNum = parseFloat(localData.payRate);
 
-    // Check required fields
-    const hasRequiredFields =
+    // Check required fields (SIN is conditional in edit mode)
+    const baseRequiredFields =
       !!localData.payType &&
       !!localData.payRate &&
-      !!localData.dateOfBirth &&
-      !!localData.sin;
+      !!localData.dateOfBirth;
+
+    // SIN validation logic based on mode and editing state
+    let sinValid = true;
+    
+    if (mode === 'create') {
+      // Create mode: SIN is required and must be valid
+      if (!localData.sin) {
+        sinValid = false;
+      } else {
+        const sinDigits = localData.sin.replace(/\D/g, "");
+        sinValid = sinDigits.length === 9;
+      }
+    } else if (mode === 'edit') {
+      if (hasExistingSIN && !isEditingSIN) {
+        // Edit mode: Has existing SIN and not editing = always valid
+        sinValid = true;
+      } else if (!hasExistingSIN || isEditingSIN) {
+        // Edit mode: No existing SIN OR editing = requires valid input
+        if (!localData.sin) {
+          sinValid = false;
+        } else {
+          const sinDigits = localData.sin.replace(/\D/g, "");
+          sinValid = sinDigits.length === 9;
+        }
+      }
+    }
 
     // Validate pay rate
     const payRateValid = payRateNum > 0 && payRateNum <= 999999;
@@ -104,16 +189,12 @@ export const PayInfoStep = ({
     const age = calculateAge(localData.dateOfBirth);
     const ageValid = age !== null && age >= 18 && age <= 100;
 
-    // SIN validation
-    const sinDigits = localData.sin.replace(/\D/g, "");
-    const sinValid = sinDigits.length === 9;
-
-    return hasRequiredFields && payRateValid && ageValid && sinValid;
+    return baseRequiredFields && sinValid && payRateValid && ageValid;
   };
 
   useEffect(() => {
     onValidationChange(validateStep());
-  }, [localData]);
+  }, [localData, isEditingSIN, hasExistingSIN]);
 
   const currentAge = calculateAge(localData.dateOfBirth);
   const payRateNum = parseFloat(localData.payRate) || 0;
@@ -235,19 +316,64 @@ export const PayInfoStep = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="sin">
-              Social Insurance Number (SIN){" "}
-              <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="sin"
-              value={formatSIN(localData.sin)}
-              onChange={(e) => handleSINChange(e.target.value)}
-              placeholder="000-000-000"
-              maxLength={11}
-            />
+            <div className="flex items-center justify-between">
+              <Label htmlFor="sin">
+                Social Insurance Number (SIN){" "}
+                {(mode === 'create' || (mode === 'edit' && (!hasExistingSIN || isEditingSIN))) && (
+                  <span className="text-red-500">*</span>
+                )}
+              </Label>
+              {hasExistingSIN && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleToggleSINEdit}
+                  disabled={isLoadingSIN}
+                  className="h-6 px-2 text-xs"
+                >
+                  {isLoadingSIN ? (
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                  ) : isEditingSIN ? (
+                    <>
+                      <EyeOff className="h-3 w-3 mr-1" />
+                      Cancel
+                    </>
+                  ) : (
+                    <>
+                      <Edit3 className="h-3 w-3 mr-1" />
+                      Edit SIN
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+            
+            {/* SIN Input */}
+            {(mode === 'create' || (hasExistingSIN && isEditingSIN) || (!hasExistingSIN)) ? (
+              <Input
+                id="sin"
+                value={formatSIN(localData.sin)}
+                onChange={(e) => handleSINChange(e.target.value)}
+                placeholder="000-000-000"
+                maxLength={11}
+                disabled={isLoadingSIN}
+              />
+            ) : (
+              <Input
+                id="sin"
+                value={maskedSIN}
+                disabled
+                className="bg-gray-50 text-gray-500"
+                placeholder="xxx-xxx-xxx"
+              />
+            )}
+            
             <p className="text-xs text-muted-foreground">
-              SIN will be encrypted and securely stored
+              {hasExistingSIN && !isEditingSIN 
+                ? "SIN is securely stored. Click 'Edit SIN' to modify."
+                : "SIN will be encrypted and securely stored"
+              }
             </p>
           </div>
         </div>
