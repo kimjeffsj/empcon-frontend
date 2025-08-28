@@ -349,7 +349,7 @@ export const BasicInfoStep = ({
                 />
               </SelectTrigger>
               <SelectContent>
-                {availablePositions.map((pos) => (
+                {positions.map((pos) => (
                   <SelectItem key={pos.id} value={pos.id}>
                     {pos.title}
                   </SelectItem>

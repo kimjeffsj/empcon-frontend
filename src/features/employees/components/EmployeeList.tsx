@@ -153,7 +153,7 @@ export const EmployeeList = () => {
 
   return (
     <div className="space-y-6">
-      {/* 헤더 */}
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Employee Management</h2>
@@ -167,11 +167,11 @@ export const EmployeeList = () => {
         </Button>
       </div>
 
-      {/* 검색 및 필터 */}
+      {/* Search and Filter */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center gap-4">
-            {/* 검색 입력 */}
+            {/* Search Input */}
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
@@ -182,7 +182,7 @@ export const EmployeeList = () => {
               />
             </div>
 
-            {/* 부서 필터 */}
+            {/* Department Filter */}
             <Select
               value={departmentFilter}
               onValueChange={setDepartmentFilter}
@@ -200,7 +200,7 @@ export const EmployeeList = () => {
               </SelectContent>
             </Select>
 
-            {/* 상태 필터 */}
+            {/* Status Filter */}
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="Status" />
@@ -217,7 +217,7 @@ export const EmployeeList = () => {
         </CardContent>
       </Card>
 
-      {/* 직원 목록 테이블 */}
+      {/* Employee List Table */}
       <Card>
         <CardHeader>
           <CardTitle>
@@ -240,7 +240,7 @@ export const EmployeeList = () => {
             <TableBody>
               {filteredEmployees.map((employee) => (
                 <TableRow key={employee.id}>
-                  {/* 이름 */}
+                  {/* Name */}
                   <TableCell>
                     <div>
                       <p className="font-medium">
@@ -252,7 +252,7 @@ export const EmployeeList = () => {
                     </div>
                   </TableCell>
 
-                  {/* 연락처 */}
+                  {/* Contact */}
                   <TableCell>
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
@@ -268,7 +268,7 @@ export const EmployeeList = () => {
                     </div>
                   </TableCell>
 
-                  {/* 부서/직책 */}
+                  {/* Department/Position */}
                   <TableCell>
                     <div>
                       <p className="font-medium">{employee.department?.name}</p>
@@ -278,20 +278,20 @@ export const EmployeeList = () => {
                     </div>
                   </TableCell>
 
-                  {/* 급여 */}
+                  {/* Salary */}
                   <TableCell>
                     {formatPayRate(employee.payRate, employee.payType)}
                   </TableCell>
 
-                  {/* 입사일 */}
+                  {/* Hire Date */}
                   <TableCell>{formatUserDate(employee.hireDate)}</TableCell>
 
-                  {/* 상태 */}
+                  {/* Status */}
                   <TableCell>
                     <StatusBadge status={employee.status} />
                   </TableCell>
 
-                  {/* 액션 */}
+                  {/* Actions */}
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Button
@@ -315,7 +315,7 @@ export const EmployeeList = () => {
             </TableBody>
           </Table>
 
-          {/* 검색 결과가 없을 때 */}
+          {/* No search results */}
           {filteredEmployees.length === 0 && (
             <div className="text-center py-8">
               <p className="text-muted-foreground">
