@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CreateEmployeeRequest, EmployeeResponse, EmployeeStatus } from "@empcon/types";
+import { CreateEmployeeRequest, UpdateEmployeeRequest, EmployeeResponse, EmployeeStatus } from "@empcon/types";
 import { Button } from "@/shared/ui/button";
 import { Edit, Mail, Phone, Plus, Search, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -102,7 +102,7 @@ export const EmployeeList = () => {
     setIsEditModalOpen(true);
   };
 
-  const handleUpdateEmployee = async (updatedData: CreateEmployeeRequest) => {
+  const handleUpdateEmployee = async (updatedData: UpdateEmployeeRequest) => {
     if (!editingEmployee) return;
 
     try {
@@ -330,7 +330,7 @@ export const EmployeeList = () => {
       <AddEmployeeModal
         open={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onSubmit={handleAddEmployee}
+        onCreate={handleAddEmployee}
         mode="create"
       />
 
@@ -341,7 +341,7 @@ export const EmployeeList = () => {
           setIsEditModalOpen(false);
           setEditingEmployee(null);
         }}
-        onSubmit={handleUpdateEmployee}
+        onUpdate={handleUpdateEmployee}
         mode="edit"
         initialData={editingEmployee || undefined}
       />

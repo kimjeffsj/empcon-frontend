@@ -14,6 +14,8 @@ import {
   calculateAnnualSalary,
   cleanSIN,
   formatSIN,
+  formatPayRateInput,
+  parsePayRate,
 } from "@/lib/formatter";
 
 interface PayInfoStepProps {
@@ -70,7 +72,7 @@ export const PayInfoStep = ({
         // Update parent formData with loaded SIN
         const updateData = {
           ...newData,
-          payRate: parseFloat(newData.payRate) || 0,
+          payRate: parsePayRate(newData.payRate),
         };
         onUpdate(updateData);
 
@@ -90,7 +92,7 @@ export const PayInfoStep = ({
       // Update parent formData to clear SIN
       const updateData = {
         ...newData,
-        payRate: parseFloat(newData.payRate) || 0,
+        payRate: parsePayRate(newData.payRate),
       };
       onUpdate(updateData);
     }
@@ -118,20 +120,22 @@ export const PayInfoStep = ({
     const newData = { ...localData, [field]: value };
     setLocalData(newData);
 
-    // convert pay rate(string) to number
-    const updateData =
-      field === "payRate"
-        ? { ...newData, payRate: parseFloat(value.toString()) || 0 }
-        : { ...newData, payRate: parseFloat(newData.payRate) || 0 };
-
-    onUpdate(updateData);
+    // Only convert payRate when payRate field is being updated
+    if (field === "payRate") {
+      const updateData = { ...newData, payRate: parsePayRate(value.toString()) };
+      onUpdate(updateData);
+    } else {
+      // For other fields, preserve existing payRate as number
+      const updateData = { ...newData, payRate: parsePayRate(newData.payRate) };
+      onUpdate(updateData);
+    }
   };
 
   // Reset payRate fields when payType changes
   const handlePayTypeChange = (payType: "HOURLY" | "SALARY") => {
     const newData = { ...localData, payType, payRate: "" };
     setLocalData(newData);
-    onUpdate({ ...newData, payRate: 0 });
+    onUpdate({ ...newData, payRate: parsePayRate("") });
   };
 
   // SIN format (000-000-000)
@@ -273,6 +277,12 @@ export const PayInfoStep = ({
                 id="payRate"
                 value={localData.payRate}
                 onChange={(e) => handlePayRateChange(e.target.value)}
+                onBlur={(e) => {
+                  const formatted = formatPayRateInput(e.target.value);
+                  if (formatted !== e.target.value) {
+                    handleFieldChange("payRate", formatted);
+                  }
+                }}
                 placeholder={localData.payType === "HOURLY" ? "25.00" : "50000"}
                 className="pl-9"
               />

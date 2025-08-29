@@ -8,7 +8,8 @@ import {
 } from "@/shared/ui/alert-dialog";
 import { Button } from "@/shared/ui/button";
 import { Progress } from "@/shared/ui/progress";
-import { CreateEmployeeRequest, EmployeeResponse } from "@empcon/types";
+import { CreateEmployeeRequest, UpdateEmployeeRequest, EmployeeResponse } from "@empcon/types";
+import { parsePayRate } from "@/lib/formatter";
 import { ArrowLeft, ArrowRight, X } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { BasicInfoStep } from "./add-employee-steps/BasicInfoStep";
@@ -21,9 +22,10 @@ import { RootState } from "@/store";
 interface AddEmployeeModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (employee: CreateEmployeeRequest) => void;
   mode?: "create" | "edit";
   initialData?: EmployeeResponse;
+  onCreate?: (employee: CreateEmployeeRequest) => void;
+  onUpdate?: (employee: UpdateEmployeeRequest) => void;
 }
 
 // Modal Steps
@@ -49,7 +51,8 @@ const STEPS = [
 export const AddEmployeeModal = ({
   open,
   onClose,
-  onSubmit,
+  onCreate,
+  onUpdate,
   mode = "create",
   initialData,
 }: AddEmployeeModalProps) => {
@@ -129,8 +132,59 @@ export const AddEmployeeModal = ({
 
   // Submit
   const handleSubmit = () => {
-    console.log("Final form data: ", formData);
-    onSubmit(formData as CreateEmployeeRequest);
+    console.log("Final form data before processing: ", formData);
+    
+    if (mode === "create") {
+      // Create mode: Send all required fields as CreateEmployeeRequest
+      const cleanedData: CreateEmployeeRequest = {
+        ...formData,
+        // Ensure payRate is number
+        payRate: parsePayRate(formData.payRate?.toString() || "0"),
+        // Remove undefined/empty optional fields
+        ...(formData.sin && formData.sin.trim() && { sin: formData.sin }),
+        ...(formData.middleName && formData.middleName.trim() && { middleName: formData.middleName }),
+        ...(formData.addressLine2 && formData.addressLine2.trim() && { addressLine2: formData.addressLine2 }),
+        ...(formData.managerId && formData.managerId.trim() && { managerId: formData.managerId }),
+        ...(formData.emergencyContactName && formData.emergencyContactName.trim() && { emergencyContactName: formData.emergencyContactName }),
+        ...(formData.emergencyContactPhone && formData.emergencyContactPhone.trim() && { emergencyContactPhone: formData.emergencyContactPhone }),
+        ...(formData.notes && formData.notes.trim() && { notes: formData.notes }),
+      } as CreateEmployeeRequest;
+      
+      console.log("Cleaned create data for submission: ", cleanedData);
+      onCreate?.(cleanedData);
+    } else {
+      // Edit mode: Send only changed fields as UpdateEmployeeRequest
+      const updateData: UpdateEmployeeRequest = {};
+      
+      // Add fields only if they have values or have been changed
+      if (formData.firstName) updateData.firstName = formData.firstName;
+      if (formData.lastName) updateData.lastName = formData.lastName;
+      if (formData.middleName?.trim()) updateData.middleName = formData.middleName;
+      if (formData.email) updateData.email = formData.email;
+      if (formData.phone) updateData.phone = formData.phone;
+      if (formData.addressLine1) updateData.addressLine1 = formData.addressLine1;
+      if (formData.addressLine2?.trim()) updateData.addressLine2 = formData.addressLine2;
+      if (formData.city) updateData.city = formData.city;
+      if (formData.province) updateData.province = formData.province;
+      if (formData.postalCode) updateData.postalCode = formData.postalCode;
+      if (formData.dateOfBirth) updateData.dateOfBirth = formData.dateOfBirth;
+      if (formData.hireDate) updateData.hireDate = formData.hireDate;
+      if (formData.payRate !== undefined) updateData.payRate = parsePayRate(formData.payRate.toString() || "0");
+      if (formData.payType) updateData.payType = formData.payType;
+      if (formData.role) updateData.role = formData.role;
+      if (formData.departmentId) updateData.departmentId = formData.departmentId;
+      if (formData.positionId) updateData.positionId = formData.positionId;
+      if (formData.managerId?.trim()) updateData.managerId = formData.managerId;
+      // SIN: Only include if not empty (security)
+      if (formData.sin?.trim()) updateData.sin = formData.sin;
+      if (formData.emergencyContactName?.trim()) updateData.emergencyContactName = formData.emergencyContactName;
+      if (formData.emergencyContactPhone?.trim()) updateData.emergencyContactPhone = formData.emergencyContactPhone;
+      if (formData.notes?.trim()) updateData.notes = formData.notes;
+      
+      console.log("Cleaned update data for submission: ", updateData);
+      onUpdate?.(updateData);
+    }
+    
     handleClose();
   };
 

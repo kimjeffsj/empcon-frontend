@@ -49,12 +49,17 @@ export function DepartmentForm({
   // Filter employees to show only those with manager-level positions
   const managerCandidates = employees.filter((employee) => {
     if (!employee.position) return false;
-    
+
     const positionTitle = employee.position.title.toLowerCase();
-    
+
     // Simple filter: position title contains "manager"
     return positionTitle.includes("manager");
   });
+
+  useEffect(() => {
+    console.log("employees", employees);
+    console.log("manager candidates", managerCandidates);
+  }, []);
 
   // Initialize form with department data when editing
   useEffect(() => {

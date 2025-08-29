@@ -9,6 +9,22 @@ export const formatPayRate = (
   return `$${payRate.toLocaleString()}/yr`;
 };
 
+// Pay rate input formatting (15 → 15.00)
+export const formatPayRateInput = (value: string): string => {
+  if (!value || value === "") return "";
+  
+  const numValue = parseFloat(value);
+  if (isNaN(numValue)) return value;
+  
+  return numValue.toFixed(2);
+};
+
+// Clean and convert pay rate string to number
+export const parsePayRate = (value: string): number => {
+  if (!value || value === "") return 0;
+  return parseFloat(value) || 0;
+};
+
 // Phone number (Canadian)
 export const formatPhoneNumber = (value: string): string => {
   if (!value) return "";
