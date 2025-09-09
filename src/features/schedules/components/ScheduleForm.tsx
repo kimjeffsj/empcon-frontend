@@ -236,7 +236,6 @@ export const ScheduleForm = ({
             <Controller
               name="employeeId"
               control={control}
-              rules={{ required: "Please select an employee" }}
               render={({ field }) => (
                 <Select value={field.value} onValueChange={field.onChange}>
                   <SelectTrigger>
@@ -259,11 +258,6 @@ export const ScheduleForm = ({
                 </Select>
               )}
             />
-            {errors.employeeId && (
-              <p className="text-sm text-red-600">
-                {errors.employeeId.message}
-              </p>
-            )}
           </div>
 
           {/* Date and Time Inputs */}

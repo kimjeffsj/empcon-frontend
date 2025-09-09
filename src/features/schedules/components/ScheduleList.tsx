@@ -209,8 +209,15 @@ export const ScheduleList = ({
     }
   };
 
-  if (isLoading) return <LoadingIndicator />;
-  if (error) return <ErrorMessage error={error} onRetry={refetch} />;
+  if (isLoading) return <LoadingIndicator message="Loading schedules..." />;
+  if (error)
+    return (
+      <ErrorMessage
+        title="Failed to Load Schedules"
+        message="Unable to fetch schedule data. Please check your connection and try again"
+        onRetry={refetch}
+      />
+    );
 
   return (
     <div className="space-y-6">
