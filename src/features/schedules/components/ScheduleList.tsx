@@ -3,24 +3,8 @@
 import { useMemo, useState } from "react";
 import { Schedule, ScheduleStatus } from "@empcon/types";
 import { Button } from "@/shared/ui/button";
-import {
-  Calendar,
-  Clock,
-  Edit,
-  Plus,
-  Search,
-  Trash2,
-  Users,
-} from "lucide-react";
+import { Calendar, Clock, Edit, Plus, Trash2, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
-import { Input } from "@/shared/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
 import {
   Table,
   TableBody,
@@ -33,61 +17,19 @@ import { Badge } from "@/shared/ui/badge";
 import { toast } from "sonner";
 import { LoadingIndicator } from "@/shared/components/Loading";
 import { ErrorMessage } from "@/shared/components/ErrorMessage";
+import { ScheduleStatusBadge } from "@/shared/components/ScheduleStatusBadge";
+import { SearchFilter } from "@/shared/components/SearchFilter";
+import {
+  formatScheduleDate,
+  formatScheduleTime,
+  formatScheduleDuration,
+} from "@/lib/formatter";
 import {
   useGetSchedulesQuery,
   useCreateScheduleMutation,
   useUpdateScheduleMutation,
   useDeleteScheduleMutation,
 } from "@/store/api/schedulesApi";
-
-// Date utilities
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-};
-
-const formatTime = (date: string) => {
-  return new Date(date).toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-};
-
-const formatDuration = (
-  startTime: string,
-  endTime: string,
-  breakDuration: number = 0
-) => {
-  const start = new Date(startTime);
-  const end = new Date(endTime);
-  const totalMinutes = Math.floor(
-    (end.getTime() - start.getTime()) / (1000 * 60)
-  );
-  const workMinutes = totalMinutes - breakDuration;
-  const hours = Math.floor(workMinutes / 60);
-  const minutes = workMinutes % 60;
-
-  return `${hours}h ${minutes}m`;
-};
-
-const getStatusColor = (status: ScheduleStatus): string => {
-  switch (status) {
-    case "SCHEDULED":
-      return "bg-blue-100 text-blue-800 border-blue-200";
-    case "COMPLETED":
-      return "bg-green-100 text-green-800 border-green-200";
-    case "CANCELLED":
-      return "bg-red-100 text-red-800 border-red-200";
-    case "NO_SHOW":
-      return "bg-orange-100 text-orange-800 border-orange-200";
-    default:
-      return "bg-gray-100 text-gray-800 border-gray-200";
-  }
-};
 
 interface ScheduleListProps {
   onAddClick?: () => void;
@@ -244,61 +186,55 @@ export const ScheduleList = ({
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="text-base font-medium">Filters</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search by name or employee ID..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+      <SearchFilter
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        placeholder="Search by name, employee ID, or position..."
+        filters={[
+          {
+            value: dateRangeFilter,
+            onChange: setDateRangeFilter,
+            options: [
+              { value: "today", label: "Today" },
+              { value: "week", label: "This Week" },
+              { value: "month", label: "This Month" },
+            ],
+            placeholder: "Select date range",
+            width: "w-40",
+          },
+          {
+            value: statusFilter,
+            onChange: setStatusFilter,
+            options: [
+              { value: "all", label: "All Statuses" },
+              { value: "SCHEDULED", label: "Scheduled" },
+              { value: "COMPLETED", label: "Completed" },
+              { value: "CANCELLED", label: "Cancelled" },
+              { value: "NO_SHOW", label: "No Show" },
+            ],
+            placeholder: "Filter by status",
+            width: "w-40",
+          },
+        ]}
+      />
 
-            {/* Date Range Filter */}
-            <Select value={dateRangeFilter} onValueChange={setDateRangeFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select date range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="week">This Week</SelectItem>
-                <SelectItem value="month">This Month</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Status Filter */}
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="SCHEDULED">Scheduled</SelectItem>
-                <SelectItem value="COMPLETED">Completed</SelectItem>
-                <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                <SelectItem value="NO_SHOW">No Show</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Results count */}
-            <div className="flex items-center text-sm text-gray-600">
-              {filteredSchedules.length} schedule
-              {filteredSchedules.length !== 1 ? "s" : ""} found
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Results count */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-600">
+          {filteredSchedules.length} schedule
+          {filteredSchedules.length !== 1 ? "s" : ""} found
+        </p>
+      </div>
 
       {/* Schedule Table */}
       <Card>
-        <CardContent className="p-0">
+        <CardHeader>
+          <CardTitle>
+            Schedule List ({filteredSchedules.length} schedule
+            {filteredSchedules.length !== 1 ? "s" : ""} found)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
@@ -342,20 +278,20 @@ export const ScheduleList = ({
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-gray-400" />
-                        {formatDate(schedule.startTime)}
+                        {formatScheduleDate(schedule.startTime)}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-gray-400" />
                         <span>
-                          {formatTime(schedule.startTime)} -{" "}
-                          {formatTime(schedule.endTime)}
+                          {formatScheduleTime(schedule.startTime)} -{" "}
+                          {formatScheduleTime(schedule.endTime)}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      {formatDuration(
+                      {formatScheduleDuration(
                         schedule.startTime,
                         schedule.endTime,
                         schedule.breakDuration
@@ -374,9 +310,7 @@ export const ScheduleList = ({
                       )}
                     </TableCell>
                     <TableCell>
-                      <Badge className={getStatusColor(schedule.status)}>
-                        {schedule.status}
-                      </Badge>
+                      <ScheduleStatusBadge status={schedule.status} />
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">

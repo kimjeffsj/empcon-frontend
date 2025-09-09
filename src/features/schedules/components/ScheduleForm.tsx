@@ -102,7 +102,7 @@ export const ScheduleForm = ({
     watch,
     setValue,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { isSubmitting },
   } = form;
 
   // Watch form values for conflict checking
@@ -356,9 +356,9 @@ export const ScheduleForm = ({
             )}
 
           {/* Additional Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Break Duration */}
-            <div className="space-y-2">
+          {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> */}
+          {/* Break Duration */}
+          {/* <div className="space-y-2">
               <Label htmlFor="breakDuration">Break Duration (minutes)</Label>
               <Controller
                 name="breakDuration"
@@ -376,10 +376,10 @@ export const ScheduleForm = ({
                   />
                 )}
               />
-            </div>
+            </div> */}
 
-            {/* Position */}
-            <div className="space-y-2">
+          {/* Position */}
+          {/* <div className="space-y-2">
               <Label htmlFor="position">Position</Label>
               <Controller
                 name="position"
@@ -393,7 +393,7 @@ export const ScheduleForm = ({
                 )}
               />
             </div>
-          </div>
+          </div> */}
 
           {/* Notes */}
           <div className="space-y-2">

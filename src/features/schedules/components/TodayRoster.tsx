@@ -14,63 +14,13 @@ import {
 } from "lucide-react";
 import { useGetTodayRosterQuery } from "@/store/api/schedulesApi";
 import { LoadingIndicator } from "@/shared/components/Loading";
+import { ScheduleStatusBadge } from "@/shared/components/ScheduleStatusBadge";
+import { formatScheduleTime } from "@/lib/formatter";
 import { ScheduleStatus } from "@empcon/types";
 
 interface TodayRosterProps {
   className?: string;
 }
-
-const formatTime = (dateString: string) => {
-  return new Date(dateString).toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-};
-
-const getStatusInfo = (status: ScheduleStatus, isCurrentlyWorking: boolean) => {
-  if (isCurrentlyWorking) {
-    return {
-      icon: CheckCircle,
-      color: "bg-green-100 text-green-800 border-green-200",
-      label: "Working Now",
-    };
-  }
-
-  switch (status) {
-    case "SCHEDULED":
-      return {
-        icon: Clock,
-        color: "bg-blue-100 text-blue-800 border-blue-200",
-        label: "Scheduled",
-      };
-    case "COMPLETED":
-      return {
-        icon: CheckCircle,
-        color: "bg-green-100 text-green-800 border-green-200",
-        label: "Completed",
-      };
-    case "CANCELLED":
-      return {
-        icon: AlertCircle,
-        color: "bg-red-100 text-red-800 border-red-200",
-        label: "Cancelled",
-      };
-    case "NO_SHOW":
-      return {
-        icon: AlertCircle,
-        color: "bg-orange-100 text-orange-800 border-orange-200",
-        label: "No Show",
-      };
-    default:
-      return {
-        icon: Clock,
-        color: "bg-gray-100 text-gray-800 border-gray-200",
-        label: status,
-      };
-  }
-};
-
 
 export const TodayRoster = ({ className }: TodayRosterProps) => {
   const router = useRouter();
@@ -169,11 +119,6 @@ export const TodayRoster = ({ className }: TodayRosterProps) => {
         ) : (
           <div className="space-y-3 max-h-80 overflow-y-auto">
             {schedules.map((schedule) => {
-              const statusInfo = getStatusInfo(
-                schedule.status,
-                schedule.isCurrentlyWorking || false
-              );
-              const StatusIcon = statusInfo.icon;
 
               return (
                 <div
@@ -197,8 +142,8 @@ export const TodayRoster = ({ className }: TodayRosterProps) => {
                       <div className="flex items-center gap-2 text-xs text-gray-500">
                         <Clock className="h-3 w-3" />
                         <span>
-                          {formatTime(schedule.startTime)} -{" "}
-                          {formatTime(schedule.endTime)}
+                          {formatScheduleTime(schedule.startTime)} -{" "}
+                          {formatScheduleTime(schedule.endTime)}
                         </span>
                       </div>
                     </div>
@@ -206,10 +151,12 @@ export const TodayRoster = ({ className }: TodayRosterProps) => {
 
                   {/* Status */}
                   <div className="flex items-center gap-2">
-                    <Badge className={`${statusInfo.color} text-xs`}>
-                      <StatusIcon className="h-3 w-3 mr-1" />
-                      {statusInfo.label}
-                    </Badge>
+                    <ScheduleStatusBadge 
+                      status={schedule.status}
+                      isCurrentlyWorking={schedule.isCurrentlyWorking || false}
+                      showIcon={true}
+                      className="text-xs"
+                    />
                   </div>
                 </div>
               );

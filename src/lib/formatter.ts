@@ -131,3 +131,64 @@ export const formatSystemTimestamp = (utcString: string): string => {
   if (!utcString) return "";
   return new Date(utcString).toLocaleDateString();
 };
+
+// ==== SCHEDULE DATE/TIME FORMATTING ====
+
+// Schedule date display (ISO string → "Oct 15, 2023")
+export const formatScheduleDate = (date: string): string => {
+  if (!date) return "";
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric", 
+    year: "numeric",
+  });
+};
+
+// Schedule time display (ISO string → "14:30" in 24-hour format)
+export const formatScheduleTime = (date: string): string => {
+  if (!date) return "";
+  return new Date(date).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+};
+
+// Calculate work duration (startTime, endTime, breakDuration → "8h 30m")
+export const formatScheduleDuration = (
+  startTime: string,
+  endTime: string,
+  breakDuration: number = 0
+): string => {
+  if (!startTime || !endTime) return "";
+  
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+  const totalMinutes = Math.floor((end.getTime() - start.getTime()) / (1000 * 60));
+  const workMinutes = totalMinutes - breakDuration;
+  const hours = Math.floor(workMinutes / 60);
+  const minutes = workMinutes % 60;
+
+  return `${hours}h ${minutes}m`;
+};
+
+// Format date for HTML input (Date/string → "2023-10-15")
+export const formatDateForInput = (date: string | Date): string => {
+  if (!date) return "";
+  const d = new Date(date);
+  return d.toISOString().split("T")[0];
+};
+
+// Format time for HTML input (Date/string → "14:30")
+export const formatTimeForInput = (date: string | Date): string => {
+  if (!date) return "";
+  const d = new Date(date);
+  return d.toTimeString().slice(0, 5);
+};
+
+// Combine date and time strings into ISO format
+export const combineDateAndTime = (date: string, time: string): string => {
+  if (!date || !time) return "";
+  const dateObj = new Date(`${date}T${time}`);
+  return dateObj.toISOString();
+};
