@@ -46,20 +46,10 @@ export function DepartmentForm({
   });
   const employees = employeesData?.employees || [];
 
-  // Filter employees to show only those with manager-level positions
+  // Filter employees to show only those with MANAGER role
   const managerCandidates = employees.filter((employee) => {
-    if (!employee.position) return false;
-
-    const positionTitle = employee.position.title.toLowerCase();
-
-    // Simple filter: position title contains "manager"
-    return positionTitle.includes("manager");
+    return employee.user?.role === "MANAGER";
   });
-
-  useEffect(() => {
-    console.log("employees", employees);
-    console.log("manager candidates", managerCandidates);
-  }, []);
 
   // Initialize form with department data when editing
   useEffect(() => {
@@ -102,7 +92,7 @@ export function DepartmentForm({
     await onSubmit({
       name: name.trim(),
       description: description.trim() || undefined,
-      managerId: managerId === "Manager" ? undefined : managerId || undefined,
+      managerId: managerId === "none" ? undefined : managerId || undefined,
     });
   };
 
@@ -132,11 +122,10 @@ export function DepartmentForm({
             <SelectValue placeholder="Select manager" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Manager">No manager assigned</SelectItem>
+            <SelectItem value="none">No manager assigned</SelectItem>
             {managerCandidates.map((employee) => (
               <SelectItem key={employee.id} value={employee.id}>
-                {employee.firstName} {employee.lastName} -{" "}
-                {employee.position?.title}
+                {employee.firstName} {employee.lastName} - {employee.user?.role}
               </SelectItem>
             ))}
           </SelectContent>

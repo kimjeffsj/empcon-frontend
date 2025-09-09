@@ -18,6 +18,7 @@ export const baseApi = createApi({
     "Department",
     "Position",
     "Schedule",
+    "TodayRoster",
     "TimeEntry",
     "LeaveRequest",
     "Payroll",

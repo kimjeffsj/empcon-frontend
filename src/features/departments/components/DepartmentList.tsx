@@ -35,19 +35,22 @@ interface DepartmentListProps {
   onAddTriggered?: () => void;
 }
 
-export function DepartmentList({ 
-  searchTerm, 
-  onDepartmentChange, 
-  triggerAdd, 
-  onAddTriggered 
+export function DepartmentList({
+  searchTerm,
+  onDepartmentChange,
+  triggerAdd,
+  onAddTriggered,
 }: DepartmentListProps) {
   const [isDeptDialogOpen, setIsDeptDialogOpen] = useState(false);
-  const [editingDepartment, setEditingDepartment] = useState<DepartmentResponse | null>(null);
+  const [editingDepartment, setEditingDepartment] =
+    useState<DepartmentResponse | null>(null);
 
   // API hooks
   const { data: departments = [] } = useGetDepartmentsQuery();
-  const [createDepartment, { isLoading: isCreatingDept }] = useCreateDepartmentMutation();
-  const [updateDepartment, { isLoading: isUpdatingDept }] = useUpdateDepartmentMutation();
+  const [createDepartment, { isLoading: isCreatingDept }] =
+    useCreateDepartmentMutation();
+  const [updateDepartment, { isLoading: isUpdatingDept }] =
+    useUpdateDepartmentMutation();
   const [deleteDepartment] = useDeleteDepartmentMutation();
 
   // Handle external trigger for Add Department
@@ -58,8 +61,12 @@ export function DepartmentList({
     }
   }, [triggerAdd, onAddTriggered]);
 
-  // CRUD Handlers  
-  const handleCreateDepartment = async (data: { name: string; description?: string; managerId?: string }) => {
+  // CRUD Handlers
+  const handleCreateDepartment = async (data: {
+    name: string;
+    description?: string;
+    managerId?: string;
+  }) => {
     try {
       const result = await createDepartment(data).unwrap();
       setIsDeptDialogOpen(false);
@@ -76,7 +83,11 @@ export function DepartmentList({
     }
   };
 
-  const handleUpdateDepartment = async (data: { name: string; description?: string; managerId?: string }) => {
+  const handleUpdateDepartment = async (data: {
+    name: string;
+    description?: string;
+    managerId?: string;
+  }) => {
     if (!editingDepartment) return;
 
     try {
@@ -118,6 +129,7 @@ export function DepartmentList({
       toast.error("Failed to delete department", {
         description: "Department may have active employees assigned.",
       });
+      throw error;
     }
   };
 
@@ -141,7 +153,8 @@ export function DepartmentList({
   const filteredDepartments = departments.filter(
     (dept) =>
       dept.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (dept.description && dept.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      (dept.description &&
+        dept.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
@@ -228,7 +241,11 @@ export function DepartmentList({
           </AlertDialogHeader>
           <DepartmentForm
             department={editingDepartment}
-            onSubmit={editingDepartment ? handleUpdateDepartment : handleCreateDepartment}
+            onSubmit={
+              editingDepartment
+                ? handleUpdateDepartment
+                : handleCreateDepartment
+            }
             onCancel={closeDepartmentDialog}
             isLoading={isCreatingDept || isUpdatingDept}
           />

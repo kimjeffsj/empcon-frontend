@@ -1,7 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CreateEmployeeRequest, UpdateEmployeeRequest, EmployeeResponse, EmployeeStatus } from "@empcon/types";
+import {
+  CreateEmployeeRequest,
+  UpdateEmployeeRequest,
+  EmployeeResponse,
+  EmployeeStatus,
+} from "@empcon/types";
 import { Button } from "@/shared/ui/button";
 import { Edit, Mail, Phone, Plus, Search, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -50,7 +55,8 @@ export const EmployeeList = () => {
     refetch,
   } = useGetEmployeesQuery({
     search: searchTerm || undefined,
-    status: statusFilter === "all" ? undefined : (statusFilter as EmployeeStatus),
+    status:
+      statusFilter === "all" ? undefined : (statusFilter as EmployeeStatus),
     departmentId: departmentFilter === "all" ? undefined : departmentFilter,
     page: 1,
     limit: 100,
@@ -121,6 +127,7 @@ export const EmployeeList = () => {
       toast.error("Failed to update employee", {
         description: "Please try again later.",
       });
+      throw error;
     }
   };
 

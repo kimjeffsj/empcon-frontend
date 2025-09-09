@@ -39,21 +39,24 @@ interface PositionListProps {
   onAddTriggered?: () => void;
 }
 
-export function PositionList({ 
-  searchTerm, 
-  departments, 
+export function PositionList({
+  searchTerm,
+  departments,
   departmentFilter = "all",
   onPositionChange,
   triggerAdd,
-  onAddTriggered 
+  onAddTriggered,
 }: PositionListProps) {
   const [isPosDialogOpen, setIsPosDialogOpen] = useState(false);
-  const [editingPosition, setEditingPosition] = useState<PositionResponse | null>(null);
+  const [editingPosition, setEditingPosition] =
+    useState<PositionResponse | null>(null);
 
   // API hooks
   const { data: positions = [] } = useGetPositionsQuery({});
-  const [createPosition, { isLoading: isCreatingPos }] = useCreatePositionMutation();
-  const [updatePosition, { isLoading: isUpdatingPos }] = useUpdatePositionMutation();
+  const [createPosition, { isLoading: isCreatingPos }] =
+    useCreatePositionMutation();
+  const [updatePosition, { isLoading: isUpdatingPos }] =
+    useUpdatePositionMutation();
   const [deletePosition] = useDeletePositionMutation();
 
   // Handle external trigger for Add Position
@@ -132,6 +135,7 @@ export function PositionList({
       toast.error("Failed to delete position", {
         description: "Position may have active employees assigned.",
       });
+      throw error;
     }
   };
 
@@ -154,14 +158,14 @@ export function PositionList({
   // Filter data
   const filteredPositions = positions.filter((pos) => {
     // Search filter
-    const matchesSearch = 
+    const matchesSearch =
       pos.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       pos.department.name.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     // Department filter
-    const matchesDepartment = 
+    const matchesDepartment =
       departmentFilter === "all" || pos.departmentId === departmentFilter;
-    
+
     return matchesSearch && matchesDepartment;
   });
 
@@ -248,7 +252,9 @@ export function PositionList({
           <PositionForm
             position={editingPosition}
             departments={departments}
-            onSubmit={editingPosition ? handleUpdatePosition : handleCreatePosition}
+            onSubmit={
+              editingPosition ? handleUpdatePosition : handleCreatePosition
+            }
             onCancel={closePositionDialog}
             isLoading={isCreatingPos || isUpdatingPos}
           />

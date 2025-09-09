@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
-import { Building, Users, Briefcase, TrendingUp } from "lucide-react";
+import { Building, Users, Briefcase } from "lucide-react";
 import { type DepartmentResponse } from "@/store/api/departmentsApi";
 import { type PositionResponse } from "@/store/api/positionsApi";
 

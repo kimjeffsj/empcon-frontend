@@ -1,0 +1,401 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { Schedule, ScheduleStatus } from "@empcon/types";
+import { Button } from "@/shared/ui/button";
+import {
+  Calendar,
+  Clock,
+  Edit,
+  Plus,
+  Search,
+  Trash2,
+  Users,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { Input } from "@/shared/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/shared/ui/table";
+import { Badge } from "@/shared/ui/badge";
+import { toast } from "sonner";
+import { LoadingIndicator } from "@/shared/components/Loading";
+import { ErrorMessage } from "@/shared/components/ErrorMessage";
+import {
+  useGetSchedulesQuery,
+  useCreateScheduleMutation,
+  useUpdateScheduleMutation,
+  useDeleteScheduleMutation,
+} from "@/store/api/schedulesApi";
+
+// Date utilities
+const formatDate = (date: string) => {
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const formatTime = (date: string) => {
+  return new Date(date).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+};
+
+const formatDuration = (
+  startTime: string,
+  endTime: string,
+  breakDuration: number = 0
+) => {
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+  const totalMinutes = Math.floor(
+    (end.getTime() - start.getTime()) / (1000 * 60)
+  );
+  const workMinutes = totalMinutes - breakDuration;
+  const hours = Math.floor(workMinutes / 60);
+  const minutes = workMinutes % 60;
+
+  return `${hours}h ${minutes}m`;
+};
+
+const getStatusColor = (status: ScheduleStatus): string => {
+  switch (status) {
+    case "SCHEDULED":
+      return "bg-blue-100 text-blue-800 border-blue-200";
+    case "COMPLETED":
+      return "bg-green-100 text-green-800 border-green-200";
+    case "CANCELLED":
+      return "bg-red-100 text-red-800 border-red-200";
+    case "NO_SHOW":
+      return "bg-orange-100 text-orange-800 border-orange-200";
+    default:
+      return "bg-gray-100 text-gray-800 border-gray-200";
+  }
+};
+
+interface ScheduleListProps {
+  onAddClick?: () => void;
+  onEditClick?: (schedule: Schedule) => void;
+}
+
+export const ScheduleList = ({
+  onAddClick,
+  onEditClick,
+}: ScheduleListProps) => {
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [dateRangeFilter, setDateRangeFilter] = useState<string>("week");
+
+  // Calculate date range based on filter
+  const { startDate, endDate } = useMemo(() => {
+    const now = new Date();
+    let start: Date;
+    let end: Date;
+
+    switch (dateRangeFilter) {
+      case "today":
+        start = new Date(now);
+        start.setHours(0, 0, 0, 0);
+        end = new Date(now);
+        end.setHours(23, 59, 59, 999);
+        break;
+      case "week":
+        start = new Date(now);
+        start.setDate(now.getDate() - now.getDay()); // Start of week
+        start.setHours(0, 0, 0, 0);
+        end = new Date(start);
+        end.setDate(start.getDate() + 6); // End of week
+        end.setHours(23, 59, 59, 999);
+        break;
+      case "month":
+        start = new Date(now.getFullYear(), now.getMonth(), 1);
+        end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        end.setHours(23, 59, 59, 999);
+        break;
+      default:
+        start = new Date(now);
+        start.setDate(now.getDate() - 7);
+        end = new Date(now);
+        end.setDate(now.getDate() + 7);
+    }
+
+    return {
+      startDate: start.toISOString().split("T")[0],
+      endDate: end.toISOString().split("T")[0],
+    };
+  }, [dateRangeFilter]);
+
+  // Fetch schedules
+  const {
+    data: schedulesData,
+    isLoading,
+    error,
+    refetch,
+  } = useGetSchedulesQuery({
+    startDate,
+    endDate,
+    status:
+      statusFilter === "all" ? undefined : (statusFilter as ScheduleStatus),
+    page: 1,
+    limit: 100,
+  });
+
+  // Mutation hooks
+  const [createSchedule] = useCreateScheduleMutation();
+  const [updateSchedule] = useUpdateScheduleMutation();
+  const [deleteSchedule] = useDeleteScheduleMutation();
+
+  const schedules = schedulesData?.data || [];
+
+  // Filter schedules by search term (employee name)
+  const filteredSchedules = useMemo(() => {
+    if (!searchTerm) return schedules;
+
+    return schedules.filter((schedule) => {
+      const employeeName = schedule.employee
+        ? `${schedule.employee.firstName} ${schedule.employee.lastName}`.toLowerCase()
+        : "";
+      const employeeNumber =
+        schedule.employee?.employeeNumber?.toLowerCase() || "";
+      const position = schedule.position?.toLowerCase() || "";
+
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        employeeName.includes(searchLower) ||
+        employeeNumber.includes(searchLower) ||
+        position.includes(searchLower)
+      );
+    });
+  }, [schedules, searchTerm]);
+
+  // Get unique positions for potential filtering
+  const positions = useMemo(() => {
+    const positionSet = new Set<string>();
+    schedules.forEach((schedule) => {
+      if (schedule.position) {
+        positionSet.add(schedule.position);
+      }
+    });
+    return Array.from(positionSet);
+  }, [schedules]);
+
+  const handleDeleteSchedule = async (id: string) => {
+    try {
+      await deleteSchedule(id).unwrap();
+      toast.success("Schedule Deleted", {
+        description: "The schedule has been removed successfully.",
+      });
+    } catch (error) {
+      toast.error("Failed to delete schedule", {
+        description: "Please try again later.",
+      });
+    }
+  };
+
+  if (isLoading) return <LoadingIndicator />;
+  if (error) return <ErrorMessage error={error} onRetry={refetch} />;
+
+  return (
+    <div className="space-y-6">
+      {/* Header and Actions */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Schedule Management
+          </h1>
+          <p className="text-sm text-gray-600 mt-1">
+            Manage employee work schedules and shifts
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Bulk Create
+          </Button>
+          <Button className="flex items-center gap-2" onClick={onAddClick}>
+            <Plus className="h-4 w-4" />
+            Add Schedule
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-base font-medium">Filters</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search by name or employee ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {/* Date Range Filter */}
+            <Select value={dateRangeFilter} onValueChange={setDateRangeFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select date range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="week">This Week</SelectItem>
+                <SelectItem value="month">This Month</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Status Filter */}
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="SCHEDULED">Scheduled</SelectItem>
+                <SelectItem value="COMPLETED">Completed</SelectItem>
+                <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                <SelectItem value="NO_SHOW">No Show</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Results count */}
+            <div className="flex items-center text-sm text-gray-600">
+              {filteredSchedules.length} schedule
+              {filteredSchedules.length !== 1 ? "s" : ""} found
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Schedule Table */}
+      <Card>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Employee</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Time</TableHead>
+                <TableHead>Duration</TableHead>
+                <TableHead>Position</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredSchedules.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8">
+                    <div className="flex flex-col items-center gap-2">
+                      <Calendar className="h-8 w-8 text-gray-400" />
+                      <p className="text-gray-500">No schedules found</p>
+                      <p className="text-sm text-gray-400">
+                        Try adjusting your filters or create a new schedule
+                      </p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredSchedules.map((schedule) => (
+                  <TableRow key={schedule.id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">
+                          {schedule.employee
+                            ? `${schedule.employee.firstName} ${schedule.employee.lastName}`
+                            : "Unknown Employee"}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {schedule.employee?.employeeNumber}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-gray-400" />
+                        {formatDate(schedule.startTime)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-gray-400" />
+                        <span>
+                          {formatTime(schedule.startTime)} -{" "}
+                          {formatTime(schedule.endTime)}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {formatDuration(
+                        schedule.startTime,
+                        schedule.endTime,
+                        schedule.breakDuration
+                      )}
+                      {schedule.breakDuration > 0 && (
+                        <span className="text-xs text-gray-500 block">
+                          (incl. {schedule.breakDuration}m break)
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {schedule.position ? (
+                        <Badge variant="secondary">{schedule.position}</Badge>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(schedule.status)}>
+                        {schedule.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEditClick?.(schedule)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteSchedule(schedule.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
