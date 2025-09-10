@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -76,9 +76,21 @@ export const ScheduleForm = ({
       status: "ACTIVE" as const,
     });
 
-  // Conflict checking
-  const [checkConflicts, { data: conflictData, isLoading: conflictLoading }] =
-    useLazyCheckScheduleConflictsQuery();
+  // Conflict checking - using BasicInfoStep pattern
+  const [checkConflicts] = useLazyCheckScheduleConflictsQuery();
+  
+  // Conflict validation state (similar to emailValidationState in BasicInfoStep)
+  const [conflictValidationState, setConflictValidationState] = useState<{
+    isValidating: boolean;
+    hasConflict: boolean | null;
+    message: string;
+    conflictingSchedules?: any[];
+  }>({
+    isValidating: false,
+    hasConflict: null,
+    message: "",
+    conflictingSchedules: [],
+  });
 
   // Form setup
   const schema =
@@ -109,6 +121,51 @@ export const ScheduleForm = ({
   const employeeId = watch("employeeId");
   const startTime = watch("startTime");
   const endTime = watch("endTime");
+
+  // Conflict check function (similar to validateEmail in BasicInfoStep)
+  const validateConflicts = useCallback(async () => {
+    // Skip validation if required fields are missing
+    if (!employeeId || !startTime || !endTime) {
+      setConflictValidationState({
+        isValidating: false,
+        hasConflict: null,
+        message: "",
+        conflictingSchedules: [],
+      });
+      return;
+    }
+
+    setConflictValidationState(prev => ({
+      ...prev,
+      isValidating: true,
+      message: "Checking for schedule conflicts...",
+    }));
+
+    try {
+      const result = await checkConflicts({
+        employeeId,
+        startTime,
+        endTime,
+        excludeScheduleId: mode === "edit" ? initialData?.id : undefined,
+      }).unwrap();
+
+      setConflictValidationState({
+        isValidating: false,
+        hasConflict: result.hasConflict,
+        message: result.hasConflict 
+          ? "Schedule conflict detected!" 
+          : "No schedule conflicts found",
+        conflictingSchedules: result.conflictingSchedules || [],
+      });
+    } catch (error) {
+      setConflictValidationState({
+        isValidating: false,
+        hasConflict: false,
+        message: "Error checking conflicts",
+        conflictingSchedules: [],
+      });
+    }
+  }, [employeeId, startTime, endTime, checkConflicts, mode, initialData?.id]);
 
   // State for date and time inputs
   const [selectedDate, setSelectedDate] = useState("");
@@ -167,21 +224,17 @@ export const ScheduleForm = ({
     }
   }, [selectedDate, endTimeInput, setValue]);
 
-  // Check conflicts when relevant fields change
-  useEffect(() => {
-    if (employeeId && startTime && endTime) {
-      const timeoutId = setTimeout(() => {
-        checkConflicts({
-          employeeId,
-          startTime,
-          endTime,
-          excludeScheduleId: mode === "edit" ? initialData?.id : undefined,
-        });
-      }, 500); // Debounce
+  // Blur event handlers (similar to handleEmailBlur in BasicInfoStep)
+  const handleEmployeeChange = useCallback((value: string) => {
+    // Update form field first
+    setValue("employeeId", value);
+    // Then check conflicts if all fields are ready
+    setTimeout(() => validateConflicts(), 100); // Small delay to ensure setValue completes
+  }, [setValue, validateConflicts]);
 
-      return () => clearTimeout(timeoutId);
-    }
-  }, [employeeId, startTime, endTime, checkConflicts, mode, initialData?.id]);
+  const handleTimeBlur = useCallback(() => {
+    validateConflicts();
+  }, [validateConflicts]);
 
   const handleFormSubmit = async (
     data: CreateScheduleRequest | UpdateScheduleRequest
@@ -217,7 +270,7 @@ export const ScheduleForm = ({
   };
 
   const employees = employeesData?.employees || [];
-  const hasConflict = conflictData?.hasConflict;
+  const hasConflict = conflictValidationState.hasConflict;
 
   return (
     <AlertDialog open={open} onOpenChange={handleClose}>
@@ -237,7 +290,7 @@ export const ScheduleForm = ({
               name="employeeId"
               control={control}
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
+                <Select value={field.value} onValueChange={handleEmployeeChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select an employee..." />
                   </SelectTrigger>
@@ -274,6 +327,7 @@ export const ScheduleForm = ({
                       type="date"
                       value={selectedDate}
                       onChange={(e) => setSelectedDate(e.target.value)}
+                      onBlur={handleTimeBlur}
                       className="pl-10"
                       required
                     />
@@ -290,6 +344,7 @@ export const ScheduleForm = ({
                       type="time"
                       value={startTimeInput}
                       onChange={(e) => setStartTimeInput(e.target.value)}
+                      onBlur={handleTimeBlur}
                       className="pl-10"
                       required
                     />
@@ -306,6 +361,7 @@ export const ScheduleForm = ({
                       type="time"
                       value={endTimeInput}
                       onChange={(e) => setEndTimeInput(e.target.value)}
+                      onBlur={handleTimeBlur}
                       className="pl-10"
                       required
                     />
@@ -315,12 +371,12 @@ export const ScheduleForm = ({
             </CardContent>
           </Card>
 
-          {/* Conflict Warning */}
-          {conflictLoading && (
+          {/* Conflict Warning - Updated to use conflictValidationState */}
+          {conflictValidationState.isValidating && (
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Checking for schedule conflicts...
+                {conflictValidationState.message}
               </AlertDescription>
             </Alert>
           )}
@@ -331,7 +387,7 @@ export const ScheduleForm = ({
               <AlertDescription>
                 Warning: This schedule conflicts with existing schedules for
                 this employee.
-                {conflictData?.conflictingSchedules?.map((conflict, index) => (
+                {conflictValidationState.conflictingSchedules?.map((conflict: any, index: number) => (
                   <div key={index} className="mt-1 text-sm">
                     • Conflict with schedule from{" "}
                     {formatTimeForInput(conflict.startTime)} to{" "}
@@ -343,14 +399,15 @@ export const ScheduleForm = ({
           )}
 
           {!hasConflict &&
-            !conflictLoading &&
+            !conflictValidationState.isValidating &&
+            conflictValidationState.hasConflict === false &&
             employeeId &&
             startTime &&
             endTime && (
               <Alert>
                 <CheckCircle className="h-4 w-4" />
                 <AlertDescription>
-                  No schedule conflicts detected.
+                  {conflictValidationState.message}
                 </AlertDescription>
               </Alert>
             )}
@@ -418,7 +475,7 @@ export const ScheduleForm = ({
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || (hasConflict && mode === "create")}
+              disabled={isSubmitting || (hasConflict === true && mode === "create")}
             >
               {isSubmitting
                 ? "Saving..."

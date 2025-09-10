@@ -6,9 +6,11 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
-import { Badge } from "@/shared/ui/badge";
-import { cn } from "@/lib/utils";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Calendar as CalendarIcon,
+} from "lucide-react";
 import { Schedule } from "@empcon/types";
 
 const localizer = momentLocalizer(moment);
@@ -22,7 +24,7 @@ interface ScheduleEvent {
     schedule: Schedule;
     employeeName: string;
     position?: string;
-    status: Schedule['status'];
+    status: Schedule["status"];
     type: "regular" | "night" | "overtime";
     daySchedules?: Schedule[]; // For summary events - all schedules for this date
   };
@@ -48,7 +50,7 @@ export function ScheduleCalendar({
   // Group schedules by date and create summary events
   const events: ScheduleEvent[] = useMemo(() => {
     const groupedByDate: { [key: string]: Schedule[] } = {};
-    
+
     // Group schedules by date (YYYY-MM-DD format)
     schedules.forEach((schedule) => {
       const dateKey = new Date(schedule.startTime).toDateString();
@@ -62,14 +64,14 @@ export function ScheduleCalendar({
     return Object.entries(groupedByDate).map(([dateKey, daySchedules]) => {
       const date = new Date(dateKey);
       const employeeCount = daySchedules.length;
-      
+
       // Calculate summary info
-      const hasNightShifts = daySchedules.some(s => {
+      const hasNightShifts = daySchedules.some((s) => {
         const hour = new Date(s.startTime).getHours();
         return hour >= 22 || hour < 6;
       });
-      
-      const hasOvertime = daySchedules.some(s => {
+
+      const hasOvertime = daySchedules.some((s) => {
         const start = new Date(s.startTime);
         const end = new Date(s.endTime);
         return end.getTime() - start.getTime() > 8 * 60 * 60 * 1000;
@@ -77,9 +79,15 @@ export function ScheduleCalendar({
 
       return {
         id: `summary-${dateKey}`,
-        title: `📅 ${employeeCount} employee${employeeCount !== 1 ? 's' : ''}`,
+        title: `📅 ${employeeCount} employee${employeeCount !== 1 ? "s" : ""}`,
         start: new Date(date.getFullYear(), date.getMonth(), date.getDate()),
-        end: new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59),
+        end: new Date(
+          date.getFullYear(),
+          date.getMonth(),
+          date.getDate(),
+          23,
+          59
+        ),
         resource: {
           schedule: daySchedules[0], // Keep first schedule for reference
           employeeName: `${employeeCount} employees`,
@@ -97,12 +105,12 @@ export function ScheduleCalendar({
     const eventDate = new Date(event.start);
     eventDate.setHours(0, 0, 0, 0); // Normalize to start of day
     setSelectedDate(eventDate);
-    
+
     // Pass selected date and schedules to parent component
     if (onDateSelect && event.resource.daySchedules) {
       onDateSelect(eventDate, event.resource.daySchedules);
     }
-    
+
     // Also call the original onSelectEvent if provided
     if (onSelectEvent) {
       onSelectEvent(event);
@@ -114,12 +122,19 @@ export function ScheduleCalendar({
     const slotDate = new Date(slotInfo.start);
     slotDate.setHours(0, 0, 0, 0); // Normalize to start of day
     setSelectedDate(slotDate);
-    
-    // Pass selected date with empty schedules array to parent component
+
+    // Find all schedules for the selected date
+    const daySchedules = schedules.filter((schedule) => {
+      const scheduleDate = new Date(schedule.startTime);
+      scheduleDate.setHours(0, 0, 0, 0); // Normalize to start of day
+      return scheduleDate.getTime() === slotDate.getTime();
+    });
+
+    // Pass selected date with actual schedules for that date
     if (onDateSelect) {
-      onDateSelect(slotDate, []);
+      onDateSelect(slotDate, daySchedules);
     }
-    
+
     // Also call the original onSelectSlot if provided
     if (onSelectSlot) {
       onSelectSlot(slotInfo);
@@ -133,9 +148,13 @@ export function ScheduleCalendar({
     // For summary events, use more neutral colors
     if (event.resource.daySchedules) {
       // Mixed status handling for summary events
-      const allCompleted = event.resource.daySchedules.every(s => s.status === "COMPLETED");
-      const hasCancelled = event.resource.daySchedules.some(s => s.status === "CANCELLED" || s.status === "NO_SHOW");
-      
+      const allCompleted = event.resource.daySchedules.every(
+        (s) => s.status === "COMPLETED"
+      );
+      const hasCancelled = event.resource.daySchedules.some(
+        (s) => s.status === "CANCELLED" || s.status === "NO_SHOW"
+      );
+
       if (allCompleted) {
         backgroundColor = "#10b981"; // green - all completed
         borderColor = "#059669";
@@ -185,31 +204,19 @@ export function ScheduleCalendar({
   const CustomToolbar = ({ label, onNavigate, onView }: any) => (
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onNavigate("PREV")}
-        >
+        <Button variant="outline" size="sm" onClick={() => onNavigate("PREV")}>
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onNavigate("NEXT")}
-        >
+        <Button variant="outline" size="sm" onClick={() => onNavigate("NEXT")}>
           <ChevronRight className="h-4 w-4" />
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onNavigate("TODAY")}
-        >
+        <Button variant="outline" size="sm" onClick={() => onNavigate("TODAY")}>
           Today
         </Button>
       </div>
-      
+
       <h3 className="text-lg font-semibold">{label}</h3>
-      
+
       <div className="flex items-center gap-1">
         {["month", "week", "day"].map((viewName) => (
           <Button
@@ -230,12 +237,10 @@ export function ScheduleCalendar({
 
   const CustomEvent = ({ event }: { event: ScheduleEvent }) => {
     const employeeCount = event.resource.daySchedules?.length || 1;
-    
+
     return (
       <div className="flex items-center justify-between text-xs">
-        <span className="font-medium truncate">
-          {event.title}
-        </span>
+        <span className="font-medium truncate">{event.title}</span>
         <div className="flex items-center gap-1">
           {event.resource.type === "night" && (
             <span className="text-xs opacity-75">🌙</span>

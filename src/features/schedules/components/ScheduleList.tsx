@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Schedule, ScheduleStatus } from "@empcon/types";
 import { Button } from "@/shared/ui/button";
 import { Calendar, Clock, Edit, Plus, Trash2, Users, List } from "lucide-react";
@@ -57,49 +57,67 @@ export const ScheduleList = ({
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateRangeFilter, setDateRangeFilter] = useState<string>("today");
 
-  // Calculate date range based on filter
+  // Calculate date range based on view mode and filter
   const { startDate, endDate } = useMemo(() => {
     const now = new Date();
     let start: Date;
     let end: Date;
 
-    switch (dateRangeFilter) {
-      case "today":
-        start = new Date(now);
-        start.setHours(0, 0, 0, 0);
-        end = new Date(now);
-        end.setHours(23, 59, 59, 999);
-        break;
-      case "week":
-        start = new Date(now);
-        start.setDate(now.getDate() - now.getDay()); // Start of week
-        start.setHours(0, 0, 0, 0);
-        end = new Date(start);
-        end.setDate(start.getDate() + 6); // End of week
-        end.setHours(23, 59, 59, 999);
-        break;
-      case "all":
-        // Show last 3 months to next 1 month for performance
-        start = new Date(now);
-        start.setMonth(now.getMonth() - 3);
-        start.setHours(0, 0, 0, 0);
-        end = new Date(now);
-        end.setMonth(now.getMonth() + 1);
-        end.setHours(23, 59, 59, 999);
-        break;
-      default:
-        // Default to today
-        start = new Date(now);
-        start.setHours(0, 0, 0, 0);
-        end = new Date(now);
-        end.setHours(23, 59, 59, 999);
+    // Calendar view: Always show current month + buffer weeks for optimal calendar display
+    if (viewMode === 'calendar') {
+      // Start of current month
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      start.setHours(0, 0, 0, 0);
+      
+      // End of current month
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      end.setHours(23, 59, 59, 999);
+      
+      // Add buffer weeks to show partial weeks from previous/next months
+      start.setDate(start.getDate() - 7); // 1 week before month start
+      end.setDate(end.getDate() + 7);     // 1 week after month end
+      
+      console.log(`Calendar view: Fetching ${start.toDateString()} to ${end.toDateString()}`);
+    } else {
+      // List view: Use existing filter logic
+      switch (dateRangeFilter) {
+        case "today":
+          start = new Date(now);
+          start.setHours(0, 0, 0, 0);
+          end = new Date(now);
+          end.setHours(23, 59, 59, 999);
+          break;
+        case "week":
+          start = new Date(now);
+          start.setDate(now.getDate() - now.getDay()); // Start of week
+          start.setHours(0, 0, 0, 0);
+          end = new Date(start);
+          end.setDate(start.getDate() + 6); // End of week
+          end.setHours(23, 59, 59, 999);
+          break;
+        case "all":
+          // Show last 3 months to next 1 month for performance
+          start = new Date(now);
+          start.setMonth(now.getMonth() - 3);
+          start.setHours(0, 0, 0, 0);
+          end = new Date(now);
+          end.setMonth(now.getMonth() + 1);
+          end.setHours(23, 59, 59, 999);
+          break;
+        default:
+          // Default to today
+          start = new Date(now);
+          start.setHours(0, 0, 0, 0);
+          end = new Date(now);
+          end.setHours(23, 59, 59, 999);
+      }
     }
 
     return {
       startDate: start.toISOString().split("T")[0],
       endDate: end.toISOString().split("T")[0],
     };
-  }, [dateRangeFilter]);
+  }, [viewMode, dateRangeFilter]);
 
   // Fetch schedules
   const {
@@ -122,6 +140,14 @@ export const ScheduleList = ({
   const [deleteSchedule] = useDeleteScheduleMutation();
 
   const schedules = schedulesData?.data || [];
+
+  // Refetch data when switching to calendar view for fresh data
+  useEffect(() => {
+    if (viewMode === 'calendar') {
+      console.log('Switching to calendar view - refetching data...');
+      refetch();
+    }
+  }, [viewMode, refetch]);
 
   // Filter schedules by search term (employee name)
   const filteredSchedules = useMemo(() => {
@@ -451,10 +477,8 @@ export const ScheduleList = ({
             }}
             onSelectSlot={(slotInfo) => {
               console.log("Selected slot:", slotInfo);
-              // Handle slot selection (e.g., create new schedule)
-              if (onAddClick) {
-                onAddClick();
-              }
+              // Note: onDateSelect will be called automatically by ScheduleCalendar
+              // No need to open Add Schedule modal here
             }}
           />
           
