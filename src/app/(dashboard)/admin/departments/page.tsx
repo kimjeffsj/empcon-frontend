@@ -38,22 +38,24 @@ export default function DepartmentsPage() {
   const resetPositionTrigger = () => setTriggerAddPosition(false);
 
   return (
-    <DepartmentPositionManagement 
-      searchTerm={searchTerm}
-      setSearchTerm={setSearchTerm}
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-      departmentFilter={departmentFilter}
-      setDepartmentFilter={setDepartmentFilter}
-      triggerAddDepartment={triggerAddDepartment}
-      triggerAddPosition={triggerAddPosition}
-      departments={departments}
-      positions={positions}
-      onAddDepartment={handleAddDepartment}
-      onAddPosition={handleAddPosition}
-      onDataChange={handleDataChange}
-      onResetDepartmentTrigger={resetDepartmentTrigger}
-      onResetPositionTrigger={resetPositionTrigger}
-    />
+    <div className="container mx-auto py-6">
+      <DepartmentPositionManagement
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        departmentFilter={departmentFilter}
+        setDepartmentFilter={setDepartmentFilter}
+        triggerAddDepartment={triggerAddDepartment}
+        triggerAddPosition={triggerAddPosition}
+        departments={departments}
+        positions={positions}
+        onAddDepartment={handleAddDepartment}
+        onAddPosition={handleAddPosition}
+        onDataChange={handleDataChange}
+        onResetDepartmentTrigger={resetDepartmentTrigger}
+        onResetPositionTrigger={resetPositionTrigger}
+      />
+    </div>
   );
 }
