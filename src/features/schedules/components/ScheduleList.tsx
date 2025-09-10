@@ -77,7 +77,6 @@ export const ScheduleList = ({
       start.setDate(start.getDate() - 7); // 1 week before month start
       end.setDate(end.getDate() + 7);     // 1 week after month end
       
-      console.log(`Calendar view: Fetching ${start.toDateString()} to ${end.toDateString()}`);
     } else {
       // List view: Use existing filter logic
       switch (dateRangeFilter) {
@@ -144,7 +143,6 @@ export const ScheduleList = ({
   // Refetch data when switching to calendar view for fresh data
   useEffect(() => {
     if (viewMode === 'calendar') {
-      console.log('Switching to calendar view - refetching data...');
       refetch();
     }
   }, [viewMode, refetch]);
@@ -472,11 +470,9 @@ export const ScheduleList = ({
             schedules={filteredSchedules}
             onDateSelect={handleDateSelect}
             onSelectEvent={(event) => {
-              console.log("Selected event:", event);
               // Handle event selection (e.g., open edit modal)
             }}
             onSelectSlot={(slotInfo) => {
-              console.log("Selected slot:", slotInfo);
               // Note: onDateSelect will be called automatically by ScheduleCalendar
               // No need to open Add Schedule modal here
             }}

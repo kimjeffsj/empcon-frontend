@@ -141,6 +141,25 @@ export function ScheduleCalendar({
     }
   };
 
+  // Handle date cell click in month view (react-big-calendar drilldown)
+  const handleDrillDown = (date: Date) => {
+    const normalizedDate = new Date(date);
+    normalizedDate.setHours(0, 0, 0, 0);
+    setSelectedDate(normalizedDate);
+
+    // Find all schedules for the selected date
+    const daySchedules = schedules.filter((schedule) => {
+      const scheduleDate = new Date(schedule.startTime);
+      scheduleDate.setHours(0, 0, 0, 0);
+      return scheduleDate.getTime() === normalizedDate.getTime();
+    });
+
+    // Pass selected date with actual schedules for that date
+    if (onDateSelect) {
+      onDateSelect(normalizedDate, daySchedules);
+    }
+  };
+
   const eventStyleGetter = (event: ScheduleEvent) => {
     let backgroundColor = "#3174ad"; // default blue
     let borderColor = "#3174ad";
@@ -295,6 +314,7 @@ export function ScheduleCalendar({
               eventPropGetter={eventStyleGetter}
               onSelectEvent={handleEventSelect}
               onSelectSlot={handleSlotSelect}
+              onDrillDown={handleDrillDown}
               selectable
               popup
               components={{
