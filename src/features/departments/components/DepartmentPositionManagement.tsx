@@ -1,47 +1,50 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/shared/ui/button";
 import { Plus } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
-import { useGetDepartmentsQuery } from "@/store/api/departmentsApi";
-import { useGetPositionsQuery } from "@/store/api/positionsApi";
 import { SearchFilter } from "@/shared/components/SearchFilter";
 import { OrganizationStats } from "./OrganizationStats";
 import { DepartmentList } from "./DepartmentList";
 import { PositionList } from "./PositionList";
 import { OrganizationInsights } from "./OrganizationInsights";
+import { DepartmentResponse, PositionResponse } from "@empcon/types";
 
-export function DepartmentPositionManagement() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("departments");
-  const [departmentFilter, setDepartmentFilter] = useState("all");
-  const [triggerAddDepartment, setTriggerAddDepartment] = useState(false);
-  const [triggerAddPosition, setTriggerAddPosition] = useState(false);
+interface DepartmentPositionManagementProps {
+  searchTerm: string;
+  setSearchTerm: (value: string) => void;
+  activeTab: string;
+  setActiveTab: (value: string) => void;
+  departmentFilter: string;
+  setDepartmentFilter: (value: string) => void;
+  triggerAddDepartment: boolean;
+  triggerAddPosition: boolean;
+  departments: DepartmentResponse[];
+  positions: PositionResponse[];
+  onAddDepartment: () => void;
+  onAddPosition: () => void;
+  onDataChange: () => void;
+  onResetDepartmentTrigger: () => void;
+  onResetPositionTrigger: () => void;
+}
 
-  // API hooks for data sharing
-  const { data: departments = [] } = useGetDepartmentsQuery();
-  const { data: positions = [] } = useGetPositionsQuery({});
-
-  // Force refresh when data changes
-  const handleDataChange = () => {
-    // Data will automatically refresh via RTK Query cache invalidation
-  };
-
-  // Add button handlers
-  const handleAddDepartment = () => {
-    setActiveTab("departments");
-    setTriggerAddDepartment(true);
-  };
-
-  const handleAddPosition = () => {
-    setActiveTab("positions");
-    setTriggerAddPosition(true);
-  };
-
-  // Reset triggers after they've been handled
-  const resetDepartmentTrigger = () => setTriggerAddDepartment(false);
-  const resetPositionTrigger = () => setTriggerAddPosition(false);
+export function DepartmentPositionManagement({
+  searchTerm,
+  setSearchTerm,
+  activeTab,
+  setActiveTab,
+  departmentFilter,
+  setDepartmentFilter,
+  triggerAddDepartment,
+  triggerAddPosition,
+  departments,
+  positions,
+  onAddDepartment,
+  onAddPosition,
+  onDataChange,
+  onResetDepartmentTrigger,
+  onResetPositionTrigger,
+}: DepartmentPositionManagementProps) {
 
   return (
     <div className="space-y-6">
@@ -54,13 +57,13 @@ export function DepartmentPositionManagement() {
           </p>
         </div>
         {activeTab === "departments" && (
-          <Button onClick={handleAddDepartment}>
+          <Button onClick={onAddDepartment}>
             <Plus className="h-4 w-4 mr-2" />
             Add Department
           </Button>
         )}
         {activeTab === "positions" && (
-          <Button onClick={handleAddPosition}>
+          <Button onClick={onAddPosition}>
             <Plus className="h-4 w-4 mr-2" />
             Add Position
           </Button>
@@ -100,9 +103,9 @@ export function DepartmentPositionManagement() {
         <TabsContent value="departments">
           <DepartmentList
             searchTerm={searchTerm}
-            onDepartmentChange={handleDataChange}
+            onDepartmentChange={onDataChange}
             triggerAdd={triggerAddDepartment}
-            onAddTriggered={resetDepartmentTrigger}
+            onAddTriggered={onResetDepartmentTrigger}
           />
         </TabsContent>
 
@@ -112,9 +115,9 @@ export function DepartmentPositionManagement() {
             searchTerm={searchTerm}
             departments={departments}
             departmentFilter={departmentFilter}
-            onPositionChange={handleDataChange}
+            onPositionChange={onDataChange}
             triggerAdd={triggerAddPosition}
-            onAddTriggered={resetPositionTrigger}
+            onAddTriggered={onResetPositionTrigger}
           />
         </TabsContent>
       </Tabs>

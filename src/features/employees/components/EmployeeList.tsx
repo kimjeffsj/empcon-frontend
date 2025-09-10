@@ -1,9 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
-  CreateEmployeeRequest,
-  UpdateEmployeeRequest,
   EmployeeResponse,
   EmployeeStatus,
 } from "@empcon/types";
@@ -26,8 +24,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/ui/table";
-import { AddEmployeeModal } from "./AddEmployeeModal";
-import { toast } from "sonner";
 import { StatusBadge } from "@/shared/components/StatusBadge";
 import {
   formatPayRate,
@@ -35,18 +31,34 @@ import {
   formatUserDate,
 } from "@/lib/formatter";
 import {
-  useCreateEmployeeMutation,
-  useDeleteEmployeeMutation,
   useGetEmployeesQuery,
-  useUpdateEmployeeMutation,
 } from "@/store/api/employeesApi";
 import { LoadingIndicator } from "@/shared/components/Loading";
 import { ErrorMessage } from "@/shared/components/ErrorMessage";
 
-export const EmployeeList = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [departmentFilter, setDepartmentFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+interface EmployeeListProps {
+  searchTerm: string;
+  setSearchTerm: (value: string) => void;
+  departmentFilter: string;
+  setDepartmentFilter: (value: string) => void;
+  statusFilter: string;
+  setStatusFilter: (value: string) => void;
+  onAddClick: () => void;
+  onEditClick: (employee: EmployeeResponse) => void;
+  onDeleteClick: (employee: EmployeeResponse) => void;
+}
+
+export const EmployeeList = ({
+  searchTerm,
+  setSearchTerm,
+  departmentFilter,
+  setDepartmentFilter,
+  statusFilter,
+  setStatusFilter,
+  onAddClick,
+  onEditClick,
+  onDeleteClick,
+}: EmployeeListProps) => {
 
   const {
     data: employeesData,
@@ -62,13 +74,7 @@ export const EmployeeList = () => {
     limit: 100,
   });
 
-  // Mutation hooks
-  const [createEmployee] = useCreateEmployeeMutation();
-  const [updateEmployee] = useUpdateEmployeeMutation();
-  const [deleteEmployee] = useDeleteEmployeeMutation();
-
-  const employees = employeesData?.employees || [];
-
+  const employees = useMemo(() => employeesData?.employees || [], [employeesData?.employees]);
   const filteredEmployees = employees;
 
   const departments = useMemo(() => {
@@ -80,69 +86,6 @@ export const EmployeeList = () => {
     });
     return Array.from(deptMap.values());
   }, [employees]);
-
-  // Modal states
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-
-  // Edit Employee states
-  const [editingEmployee, setEditingEmployee] =
-    useState<EmployeeResponse | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
-  const handleAddEmployee = async (employeeData: CreateEmployeeRequest) => {
-    try {
-      await createEmployee(employeeData).unwrap();
-      toast.success("Employee Added Successfully", {
-        description: `${employeeData.firstName} ${employeeData.lastName} has been added to the system.`,
-      });
-    } catch (error) {
-      toast.error("Failed to add employee", {
-        description: "Please try again later.",
-      });
-    }
-  };
-
-  // Edit Employee handlers
-  const handleEditEmployee = (employee: EmployeeResponse) => {
-    setEditingEmployee(employee);
-    setIsEditModalOpen(true);
-  };
-
-  const handleUpdateEmployee = async (updatedData: UpdateEmployeeRequest) => {
-    if (!editingEmployee) return;
-
-    try {
-      await updateEmployee({
-        id: editingEmployee.id,
-        data: updatedData,
-      }).unwrap();
-
-      toast.success("Employee Updated Successfully", {
-        description: `${updatedData.firstName} ${updatedData.lastName} has been updated.`,
-      });
-
-      setIsEditModalOpen(false);
-      setEditingEmployee(null);
-    } catch (error) {
-      toast.error("Failed to update employee", {
-        description: "Please try again later.",
-      });
-      throw error;
-    }
-  };
-
-  const handleDeleteEmployee = async (employee: EmployeeResponse) => {
-    try {
-      await deleteEmployee(employee.id).unwrap();
-      toast.success("Employee Deleted Successfully", {
-        description: `${employee.firstName} ${employee.lastName} has been removed.`,
-      });
-    } catch (error) {
-      toast.error("Failed to delete employee", {
-        description: "Please try again later.",
-      });
-    }
-  };
 
   if (isLoading) {
     return <LoadingIndicator message="Loading employees..." />;
@@ -168,7 +111,7 @@ export const EmployeeList = () => {
             Manage and view employee information
           </p>
         </div>
-        <Button onClick={() => setIsAddModalOpen(true)}>
+        <Button onClick={onAddClick}>
           <Plus className="h-4 w-4 mr-2" />
           Add Employee
         </Button>
@@ -304,14 +247,14 @@ export const EmployeeList = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleEditEmployee(employee)}
+                        onClick={() => onEditClick(employee)}
                       >
                         <Edit className="h-3 w-3" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDeleteEmployee(employee)}
+                        onClick={() => onDeleteClick(employee)}
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
@@ -333,25 +276,6 @@ export const EmployeeList = () => {
         </CardContent>
       </Card>
 
-      {/* Add Employee Modal */}
-      <AddEmployeeModal
-        open={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onCreate={handleAddEmployee}
-        mode="create"
-      />
-
-      {/* Edit Employee Modal */}
-      <AddEmployeeModal
-        open={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setEditingEmployee(null);
-        }}
-        onUpdate={handleUpdateEmployee}
-        mode="edit"
-        initialData={editingEmployee || undefined}
-      />
     </div>
   );
 };

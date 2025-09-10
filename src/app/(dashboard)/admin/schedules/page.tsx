@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ScheduleList } from "@/features/schedules/components/ScheduleList";
 import { ScheduleForm } from "@/features/schedules/components/ScheduleForm";
-import { CreateScheduleRequest, UpdateScheduleRequest } from "@empcon/types";
+import { CreateScheduleRequest, UpdateScheduleRequest, Schedule } from "@empcon/types";
 import {
   useCreateScheduleMutation,
   useUpdateScheduleMutation,
@@ -11,23 +11,25 @@ import {
 
 export default function SchedulesPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingSchedule, setEditingSchedule] = useState(null);
+  const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
 
   // Mutations
   const [createSchedule] = useCreateScheduleMutation();
   const [updateSchedule] = useUpdateScheduleMutation();
 
-  const handleCreateSchedule = async (data: CreateScheduleRequest) => {
-    await createSchedule(data).unwrap();
-  };
-
-  const handleUpdateSchedule = async (data: UpdateScheduleRequest) => {
+  // 통합된 스케줄 처리 함수
+  const handleScheduleSubmit = async (data: CreateScheduleRequest | UpdateScheduleRequest) => {
     if (editingSchedule) {
+      // 편집 모드: UpdateScheduleRequest
       await updateSchedule({
         id: editingSchedule.id,
-        data,
+        data: data as UpdateScheduleRequest,
       }).unwrap();
+    } else {
+      // 생성 모드: CreateScheduleRequest  
+      await createSchedule(data as CreateScheduleRequest).unwrap();
     }
+    handleFormClose();
   };
 
   const handleFormClose = () => {
@@ -39,7 +41,7 @@ export default function SchedulesPage() {
     <div className="container mx-auto py-6">
       <ScheduleList 
         onAddClick={() => setIsFormOpen(true)}
-        onEditClick={(schedule) => {
+        onEditClick={(schedule: Schedule) => {
           setEditingSchedule(schedule);
           setIsFormOpen(true);
         }}
@@ -49,8 +51,8 @@ export default function SchedulesPage() {
         open={isFormOpen}
         onClose={handleFormClose}
         mode={editingSchedule ? "edit" : "create"}
-        initialData={editingSchedule}
-        onSubmit={editingSchedule ? handleUpdateSchedule : handleCreateSchedule}
+        initialData={editingSchedule || undefined}
+        onSubmit={handleScheduleSubmit}
       />
     </div>
   );

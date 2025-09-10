@@ -218,14 +218,6 @@ export const ScheduleList = ({
         ]}
       />
 
-      {/* Results count */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-600">
-          {filteredSchedules.length} schedule
-          {filteredSchedules.length !== 1 ? "s" : ""} found
-        </p>
-      </div>
-
       {/* Schedule Table */}
       <Card>
         <CardHeader>
