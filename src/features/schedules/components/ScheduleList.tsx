@@ -6,20 +6,14 @@ import { Button } from "@/shared/ui/button";
 import { Calendar, Clock, Edit, Plus, Trash2, Users, List } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shared/ui/table";
 import { Badge } from "@/shared/ui/badge";
 import { toast } from "sonner";
 import { LoadingIndicator } from "@/shared/components/Loading";
 import { ErrorMessage } from "@/shared/components/ErrorMessage";
 import { ScheduleStatusBadge } from "@/shared/components/ScheduleStatusBadge";
 import { SearchFilter } from "@/shared/components/SearchFilter";
+import { ScheduleTable } from "@/shared/components/ScheduleTable";
+import { EmployeeInfo } from "@/shared/components/EmployeeInfo";
 import { StatsCard } from "@/shared/components/StatsCard";
 import { ScheduleCalendar } from "./ScheduleCalendar";
 import {
@@ -350,117 +344,25 @@ export const ScheduleList = ({
 
           {/* Schedule Table */}
           <Card>
-        <CardHeader>
-          <CardTitle>
-            {dateRangeFilter === "today" ? "Today's Schedule" : 
-             dateRangeFilter === "week" ? "This Week's Schedule" : 
-             "All Schedules"} ({filteredSchedules.length} schedule
-            {filteredSchedules.length !== 1 ? "s" : ""} found)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Employee</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Time</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead>Position</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredSchedules.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
-                    <div className="flex flex-col items-center gap-2">
-                      <Calendar className="h-8 w-8 text-gray-400" />
-                      <p className="text-gray-500">No schedules found</p>
-                      <p className="text-sm text-gray-400">
-                        Try adjusting your filters or create a new schedule
-                      </p>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredSchedules.map((schedule) => (
-                  <TableRow key={schedule.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">
-                          {schedule.employee
-                            ? `${schedule.employee.firstName} ${schedule.employee.lastName}`
-                            : "Unknown Employee"}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {schedule.employee?.employeeNumber}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-gray-400" />
-                        {formatScheduleDate(schedule.startTime)}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-gray-400" />
-                        <span>
-                          {formatScheduleTime(schedule.startTime)} -{" "}
-                          {formatScheduleTime(schedule.endTime)}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {formatScheduleDuration(
-                        schedule.startTime,
-                        schedule.endTime,
-                        schedule.breakDuration
-                      )}
-                      {schedule.breakDuration > 0 && (
-                        <span className="text-xs text-gray-500 block">
-                          (incl. {schedule.breakDuration}m break)
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {schedule.position ? (
-                        <Badge variant="secondary">{schedule.position}</Badge>
-                      ) : (
-                        <span className="text-gray-400">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <ScheduleStatusBadge status={schedule.status} />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onEditClick?.(schedule)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteSchedule(schedule.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            <CardHeader>
+              <CardTitle>
+                {dateRangeFilter === "today" ? "Today's Schedule" : 
+                 dateRangeFilter === "week" ? "This Week's Schedule" : 
+                 "All Schedules"} ({filteredSchedules.length} schedule
+                {filteredSchedules.length !== 1 ? "s" : ""} found)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScheduleTable
+                schedules={filteredSchedules}
+                showDateColumn={true}
+                onEditClick={onEditClick}
+                onDeleteClick={handleDeleteSchedule}
+                emptyMessage="No schedules found"
+                emptyDescription="Try adjusting your filters or create a new schedule"
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
 
 
@@ -496,99 +398,14 @@ export const ScheduleList = ({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Employee</TableHead>
-                      <TableHead>Time</TableHead>
-                      <TableHead>Duration</TableHead>
-                      <TableHead>Position</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {selectedDateSchedules.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8">
-                          <div className="flex flex-col items-center gap-2">
-                            <Calendar className="h-8 w-8 text-gray-400" />
-                            <p className="text-gray-500">No schedules for this date</p>
-                            <p className="text-sm text-gray-400">
-                              Click "Add Schedule" to create a new schedule for this date
-                            </p>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      selectedDateSchedules.map((schedule) => (
-                        <TableRow key={schedule.id}>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">
-                                {schedule.employee
-                                  ? `${schedule.employee.firstName} ${schedule.employee.lastName}`
-                                  : "Unknown Employee"}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                {schedule.employee?.employeeNumber}
-                              </p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-gray-400" />
-                              <span>
-                                {formatScheduleTime(schedule.startTime)} -{" "}
-                                {formatScheduleTime(schedule.endTime)}
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {formatScheduleDuration(
-                              schedule.startTime,
-                              schedule.endTime,
-                              schedule.breakDuration
-                            )}
-                            {schedule.breakDuration > 0 && (
-                              <span className="text-xs text-gray-500 block">
-                                (incl. {schedule.breakDuration}m break)
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {schedule.position ? (
-                              <Badge variant="secondary">{schedule.position}</Badge>
-                            ) : (
-                              <span className="text-gray-400">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <ScheduleStatusBadge status={schedule.status} />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => onEditClick?.(schedule)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteSchedule(schedule.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                <ScheduleTable
+                  schedules={selectedDateSchedules}
+                  showDateColumn={false}
+                  onEditClick={onEditClick}
+                  onDeleteClick={handleDeleteSchedule}
+                  emptyMessage="No schedules for this date"
+                  emptyDescription="Click 'Add Schedule' to create a new schedule for this date"
+                />
               </CardContent>
             </Card>
           )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -35,6 +35,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/shared/ui/alert-dialog";
+import {
+  formatDateForInput,
+  formatTimeForInput,
+  combineDateAndTime,
+} from "@/shared/utils/dateTime";
 
 interface ScheduleFormProps {
   open: boolean;
@@ -46,21 +51,6 @@ interface ScheduleFormProps {
   ) => Promise<void>;
 }
 
-// Utility functions for date/time handling
-const formatDateForInput = (date: string | Date) => {
-  const d = new Date(date);
-  return d.toISOString().split("T")[0];
-};
-
-const formatTimeForInput = (date: string | Date) => {
-  const d = new Date(date);
-  return d.toTimeString().slice(0, 5);
-};
-
-const combineDateAndTime = (date: string, time: string): string => {
-  const dateObj = new Date(`${date}T${time}`);
-  return dateObj.toISOString();
-};
 
 export const ScheduleForm = ({
   open,
@@ -117,10 +107,20 @@ export const ScheduleForm = ({
     formState: { isSubmitting },
   } = form;
 
+  // Stable references for form functions
+  const stableSetValue = useCallback(setValue, [setValue]);
+  const stableReset = useCallback(reset, [reset]);
+
   // Watch form values for conflict checking
   const employeeId = watch("employeeId");
   const startTime = watch("startTime");
   const endTime = watch("endTime");
+
+  // Memoize stable initialData id for validateConflicts dependency
+  const excludeScheduleId = useMemo(() => 
+    mode === "edit" ? initialData?.id : undefined, 
+    [mode, initialData?.id]
+  );
 
   // Conflict check function (similar to validateEmail in BasicInfoStep)
   const validateConflicts = useCallback(async () => {
@@ -146,7 +146,7 @@ export const ScheduleForm = ({
         employeeId,
         startTime,
         endTime,
-        excludeScheduleId: mode === "edit" ? initialData?.id : undefined,
+        excludeScheduleId,
       }).unwrap();
 
       setConflictValidationState({
@@ -165,7 +165,7 @@ export const ScheduleForm = ({
         conflictingSchedules: [],
       });
     }
-  }, [employeeId, startTime, endTime, checkConflicts, mode, initialData?.id]);
+  }, [employeeId, startTime, endTime, checkConflicts, excludeScheduleId]);
 
   // State for date and time inputs
   const [selectedDate, setSelectedDate] = useState("");
@@ -207,7 +207,7 @@ export const ScheduleForm = ({
         notes: "",
       });
     }
-  }, [mode, initialData, open, reset]);
+  }, [mode, initialData, open, stableReset]);
 
   // Update combined datetime when date/time inputs change
   useEffect(() => {
@@ -215,34 +215,34 @@ export const ScheduleForm = ({
       const combined = combineDateAndTime(selectedDate, startTimeInput);
       setValue("startTime", combined);
     }
-  }, [selectedDate, startTimeInput, setValue]);
+  }, [selectedDate, startTimeInput, stableSetValue]);
 
   useEffect(() => {
     if (selectedDate && endTimeInput) {
       const combined = combineDateAndTime(selectedDate, endTimeInput);
       setValue("endTime", combined);
     }
-  }, [selectedDate, endTimeInput, setValue]);
+  }, [selectedDate, endTimeInput, stableSetValue]);
 
   // Blur event handlers (similar to handleEmailBlur in BasicInfoStep)
   const handleEmployeeChange = useCallback((value: string) => {
     // Update form field first
-    setValue("employeeId", value);
+    stableSetValue("employeeId", value);
     // Then check conflicts if all fields are ready
     setTimeout(() => validateConflicts(), 100); // Small delay to ensure setValue completes
-  }, [setValue, validateConflicts]);
+  }, [stableSetValue, validateConflicts]);
 
   const handleTimeBlur = useCallback(() => {
     validateConflicts();
   }, [validateConflicts]);
 
-  const handleFormSubmit = async (
+  const handleFormSubmit = useCallback(async (
     data: CreateScheduleRequest | UpdateScheduleRequest
   ) => {
     try {
       await onSubmit(data);
       onClose();
-      reset();
+      stableReset();
       toast.success(mode === "edit" ? "Schedule Updated" : "Schedule Created", {
         description:
           mode === "edit"
@@ -259,15 +259,15 @@ export const ScheduleForm = ({
         }
       );
     }
-  };
+  }, [onSubmit, onClose, stableReset, mode]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     onClose();
-    reset();
+    stableReset();
     setSelectedDate("");
     setStartTimeInput("");
     setEndTimeInput("");
-  };
+  }, [onClose, stableReset]);
 
   const employees = employeesData?.employees || [];
   const hasConflict = conflictValidationState.hasConflict;
