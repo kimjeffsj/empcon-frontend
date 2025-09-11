@@ -280,22 +280,6 @@ export function ScheduleCalendar({
             <CalendarIcon className="h-4 w-4" />
             Schedule Calendar
           </CardTitle>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm">
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-green-500 rounded"></div>
-                <span>Completed</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-yellow-500 rounded"></div>
-                <span>Scheduled</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-red-500 rounded"></div>
-                <span>Cancelled/No Show</span>
-              </div>
-            </div>
-          </div>
         </div>
       </CardHeader>
       <CardContent className="p-0">

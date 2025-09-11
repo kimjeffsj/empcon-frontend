@@ -1,7 +1,7 @@
 "use client";
 
 import { useSelector, useDispatch } from "react-redux";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/shared/ui/button";
 import {
   LayoutDashboard,
@@ -53,6 +53,33 @@ const EMPLOYEE_MENU_ITEMS = [
   { href: "/employee/payroll", label: "Payroll", icon: DollarSign },
 ];
 
+const PAGE_TITLES: Record<string, string> = {
+  // Auth pages
+  '/login': 'Login',
+  '/': 'Welcome',
+  
+  // Admin pages  
+  '/admin/dashboard': 'Dashboard',
+  '/admin/employees': 'Employees',
+  '/admin/departments': 'Departments & Positions', 
+  '/admin/schedules': 'Schedules',
+  '/admin/timeclocks': 'Time Clocks',
+  '/admin/leaves': 'Leaves',
+  '/admin/payroll': 'Payroll', 
+  '/admin/reports': 'Reports',
+  
+  // Employee pages
+  '/employee/dashboard': 'Dashboard',
+  '/employee/schedule': 'My Schedule',
+  '/employee/timeclock': 'Time Clock', 
+  '/employee/leaves': 'Leave Requests',
+  '/employee/payroll': 'Payroll',
+};
+
+const getPageTitle = (pathname: string): string => {
+  return PAGE_TITLES[pathname] || 'Dashboard';
+};
+
 interface AppLayoutProps {
   children: React.ReactNode;
 }
@@ -60,6 +87,7 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const { user } = useSelector((state: RootState) => state.auth);
   const router = useRouter();
+  const pathname = usePathname();
   const dispatch = useDispatch();
   const [logoutMutation] = useLogoutMutation();
 
@@ -139,7 +167,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           <div className="p-6">
             <div className="flex items-center gap-4 mb-6">
               <SidebarTrigger />
-              <h1 className="text-2xl font-bold">Dashboard</h1>
+              <h1 className="text-2xl font-bold">{getPageTitle(pathname)}</h1>
             </div>
             {children}
           </div>
