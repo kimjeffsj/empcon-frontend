@@ -1,15 +1,15 @@
 import { Employee } from "@empcon/types";
 
 interface EmployeeInfoProps {
-  employee?: Employee | null;
+  employee?: Partial<Employee> | null;
   showEmployeeNumber?: boolean;
   className?: string;
 }
 
-export const EmployeeInfo = ({ 
-  employee, 
-  showEmployeeNumber = true, 
-  className = "" 
+export const EmployeeInfo = ({
+  employee,
+  showEmployeeNumber = true,
+  className = "",
 }: EmployeeInfoProps) => {
   return (
     <div className={className}>
@@ -19,9 +19,7 @@ export const EmployeeInfo = ({
           : "Unknown Employee"}
       </p>
       {showEmployeeNumber && (
-        <p className="text-sm text-gray-500">
-          {employee?.employeeNumber}
-        </p>
+        <p className="text-sm text-gray-500">{employee?.employeeNumber}</p>
       )}
     </div>
   );

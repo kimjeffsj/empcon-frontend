@@ -32,7 +32,7 @@ export const StatsCard = ({
       <CardContent>
         <div className="text-2xl font-bold">{value}</div>
         <p className="text-xs text-muted-foreground">
-          <span className={changeColor}>{change}</span> from last week
+          <span className={changeColor}>{change}</span>
         </p>
       </CardContent>
     </Card>

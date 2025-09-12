@@ -125,7 +125,7 @@ export default function LoginPage() {
                   Demo Login
                 </span> */}
                 <span className="bg-background px-2 text-muted-foreground">
-                  Can't access?
+                  Can&apos;t access?
                 </span>
               </div>
             </div>

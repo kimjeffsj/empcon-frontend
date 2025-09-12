@@ -3,24 +3,17 @@
 import { useMemo, useState, useEffect } from "react";
 import { Schedule, ScheduleStatus } from "@empcon/types";
 import { Button } from "@/shared/ui/button";
-import { Calendar, Clock, Edit, Plus, Trash2, Users, List } from "lucide-react";
+import { Calendar, Clock, Plus, Users, List } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { Badge } from "@/shared/ui/badge";
 import { toast } from "sonner";
 import { LoadingIndicator } from "@/shared/components/Loading";
 import { ErrorMessage } from "@/shared/components/ErrorMessage";
-import { ScheduleStatusBadge } from "@/shared/components/ScheduleStatusBadge";
 import { SearchFilter } from "@/shared/components/SearchFilter";
 import { ScheduleTable } from "@/shared/components/ScheduleTable";
-import { EmployeeInfo } from "@/shared/components/EmployeeInfo";
 import { StatsCard } from "@/shared/components/StatsCard";
 import { ScheduleCalendar } from "./ScheduleCalendar";
-import {
-  formatScheduleDate,
-  formatScheduleTime,
-  formatScheduleDuration,
-} from "@/lib/formatter";
 import {
   useGetSchedulesQuery,
   useCreateScheduleMutation,
@@ -28,24 +21,29 @@ import {
   useDeleteScheduleMutation,
 } from "@/store/api/schedulesApi";
 
-type ViewMode = 'list' | 'calendar';
+type ViewMode = "list" | "calendar";
 
 interface ScheduleListProps {
   onAddClick?: () => void;
   onEditClick?: (schedule: Schedule) => void;
+  readOnly?: boolean; // Employee mode - disable management actions
+  hideHeader?: boolean; // Hide header section for embedded usage
 }
 
 export const ScheduleList = ({
   onAddClick,
   onEditClick,
+  readOnly = false,
 }: ScheduleListProps) => {
   // View mode state
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-  
+
   // Calendar View selected date state
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedDateSchedules, setSelectedDateSchedules] = useState<Schedule[]>([]);
-  
+  const [selectedDateSchedules, setSelectedDateSchedules] = useState<
+    Schedule[]
+  >([]);
+
   // Filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -58,19 +56,18 @@ export const ScheduleList = ({
     let end: Date;
 
     // Calendar view: Always show current month + buffer weeks for optimal calendar display
-    if (viewMode === 'calendar') {
+    if (viewMode === "calendar") {
       // Start of current month
       start = new Date(now.getFullYear(), now.getMonth(), 1);
       start.setHours(0, 0, 0, 0);
-      
+
       // End of current month
       end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
       end.setHours(23, 59, 59, 999);
-      
+
       // Add buffer weeks to show partial weeks from previous/next months
       start.setDate(start.getDate() - 7); // 1 week before month start
-      end.setDate(end.getDate() + 7);     // 1 week after month end
-      
+      end.setDate(end.getDate() + 7); // 1 week after month end
     } else {
       // List view: Use existing filter logic
       switch (dateRangeFilter) {
@@ -136,7 +133,7 @@ export const ScheduleList = ({
 
   // Refetch data when switching to calendar view for fresh data
   useEffect(() => {
-    if (viewMode === 'calendar') {
+    if (viewMode === "calendar") {
       refetch();
     }
   }, [viewMode, refetch]);
@@ -165,47 +162,52 @@ export const ScheduleList = ({
   // Calculate statistics for card view
   const scheduleStats = useMemo(() => {
     const total = filteredSchedules.length;
-    const scheduled = filteredSchedules.filter(s => s.status === 'SCHEDULED').length;
-    const completed = filteredSchedules.filter(s => s.status === 'COMPLETED').length;
-    
+    const scheduled = filteredSchedules.filter(
+      (s) => s.status === "SCHEDULED"
+    ).length;
+    const completed = filteredSchedules.filter(
+      (s) => s.status === "COMPLETED"
+    ).length;
+
     // Classify by time (regular vs night shift)
-    const regularShifts = filteredSchedules.filter(schedule => {
+    const regularShifts = filteredSchedules.filter((schedule) => {
       const startHour = new Date(schedule.startTime).getHours();
       return startHour >= 6 && startHour < 18; // 6 AM to 6 PM = regular
     }).length;
-    
-    const nightShifts = filteredSchedules.filter(schedule => {
+
+    const nightShifts = filteredSchedules.filter((schedule) => {
       const startHour = new Date(schedule.startTime).getHours();
       return startHour < 6 || startHour >= 18; // Before 6 AM or after 6 PM = night
     }).length;
 
-    const onLeave = filteredSchedules.filter(s => 
-      s.status === 'CANCELLED' || s.notes?.toLowerCase().includes('leave')
+    const onLeave = filteredSchedules.filter(
+      (s) =>
+        s.status === "CANCELLED" || s.notes?.toLowerCase().includes("leave")
     ).length;
 
     return {
       total,
       regularShifts,
       nightShifts,
-      onLeave
+      onLeave,
     };
   }, [filteredSchedules]);
 
   // Transform schedules for calendar view
   const calendarEvents = useMemo(() => {
-    return filteredSchedules.map(schedule => ({
+    return filteredSchedules.map((schedule) => ({
       id: schedule.id,
-      title: schedule.employee 
+      title: schedule.employee
         ? `${schedule.employee.firstName} ${schedule.employee.lastName}`
-        : 'Unknown Employee',
+        : "Unknown Employee",
       start: new Date(schedule.startTime),
       end: new Date(schedule.endTime),
       resource: {
         schedule,
         employee: schedule.employee,
         status: schedule.status,
-        position: schedule.position
-      }
+        position: schedule.position,
+      },
     }));
   }, [filteredSchedules]);
 
@@ -244,26 +246,33 @@ export const ScheduleList = ({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">
-            Schedule Management
+            {readOnly ? "My Schedule" : "Schedule Management"}
           </h1>
           <p className="text-sm text-gray-600 mt-1">
-            Manage employee work schedules and shifts
+            {readOnly
+              ? "View your work schedule and upcoming shifts"
+              : "Manage employee work schedules and shifts"}
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Bulk Create
-          </Button>
-          <Button className="flex items-center gap-2" onClick={onAddClick}>
-            <Plus className="h-4 w-4" />
-            Add Schedule
-          </Button>
-        </div>
+        {!readOnly && (
+          <div className="flex items-center gap-3">
+            <Button variant="outline" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Bulk Create
+            </Button>
+            <Button className="flex items-center gap-2" onClick={onAddClick}>
+              <Plus className="h-4 w-4" />
+              Add Schedule
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* View Mode Tabs */}
-      <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
+      <Tabs
+        value={viewMode}
+        onValueChange={(value) => setViewMode(value as ViewMode)}
+      >
         <TabsList>
           <TabsTrigger value="list" className="flex items-center gap-2">
             <List className="h-4 w-4" />
@@ -279,7 +288,7 @@ export const ScheduleList = ({
         <SearchFilter
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          placeholder="Search by name, employee ID, or position..."
+          placeholder="Search by name, employee ID, or location..."
           filters={[
             {
               value: dateRangeFilter,
@@ -346,9 +355,12 @@ export const ScheduleList = ({
           <Card>
             <CardHeader>
               <CardTitle>
-                {dateRangeFilter === "today" ? "Today's Schedule" : 
-                 dateRangeFilter === "week" ? "This Week's Schedule" : 
-                 "All Schedules"} ({filteredSchedules.length} schedule
+                {dateRangeFilter === "today"
+                  ? "Today's Schedule"
+                  : dateRangeFilter === "week"
+                  ? "This Week's Schedule"
+                  : "All Schedules"}{" "}
+                ({filteredSchedules.length} schedule
                 {filteredSchedules.length !== 1 ? "s" : ""} found)
               </CardTitle>
             </CardHeader>
@@ -356,15 +368,19 @@ export const ScheduleList = ({
               <ScheduleTable
                 schedules={filteredSchedules}
                 showDateColumn={true}
-                onEditClick={onEditClick}
-                onDeleteClick={handleDeleteSchedule}
+                onEditClick={readOnly ? undefined : onEditClick}
+                onDeleteClick={readOnly ? undefined : handleDeleteSchedule}
+                hideActions={readOnly}
                 emptyMessage="No schedules found"
-                emptyDescription="Try adjusting your filters or create a new schedule"
+                emptyDescription={
+                  readOnly
+                    ? "No schedules found for the selected period"
+                    : "Try adjusting your filters or create a new schedule"
+                }
               />
             </CardContent>
           </Card>
         </TabsContent>
-
 
         {/* Calendar View */}
         <TabsContent value="calendar" className="space-y-6">
@@ -379,21 +395,23 @@ export const ScheduleList = ({
               // No need to open Add Schedule modal here
             }}
           />
-          
+
           {/* Selected Date Detail Table */}
           {selectedDate && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  Schedules for {selectedDate.toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
+                  Schedules for{" "}
+                  {selectedDate.toLocaleDateString("en-US", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
                   })}
                   <Badge variant="secondary" className="ml-auto">
-                    {selectedDateSchedules.length} schedule{selectedDateSchedules.length !== 1 ? 's' : ''}
+                    {selectedDateSchedules.length} schedule
+                    {selectedDateSchedules.length !== 1 ? "s" : ""}
                   </Badge>
                 </CardTitle>
               </CardHeader>
@@ -401,16 +419,20 @@ export const ScheduleList = ({
                 <ScheduleTable
                   schedules={selectedDateSchedules}
                   showDateColumn={false}
-                  onEditClick={onEditClick}
-                  onDeleteClick={handleDeleteSchedule}
+                  onEditClick={readOnly ? undefined : onEditClick}
+                  onDeleteClick={readOnly ? undefined : handleDeleteSchedule}
+                  hideActions={readOnly}
                   emptyMessage="No schedules for this date"
-                  emptyDescription="Click 'Add Schedule' to create a new schedule for this date"
+                  emptyDescription={
+                    readOnly
+                      ? "No schedules found for this date"
+                      : "Click 'Add Schedule' to create a new schedule for this date"
+                  }
                 />
               </CardContent>
             </Card>
           )}
         </TabsContent>
-
       </Tabs>
     </div>
   );

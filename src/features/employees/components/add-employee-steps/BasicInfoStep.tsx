@@ -21,7 +21,7 @@ interface BasicInfoStepProps {
   data: Partial<CreateEmployeeRequest>;
   onUpdate: (data: Partial<CreateEmployeeRequest>) => void;
   onValidationChange: (isValid: boolean) => void;
-  mode?: 'create' | 'edit';
+  mode?: "create" | "edit";
   initialData?: EmployeeResponse;
 }
 
@@ -29,7 +29,7 @@ export const BasicInfoStep = ({
   data,
   onUpdate,
   onValidationChange,
-  mode = 'create',
+  mode = "create",
   initialData,
 }: BasicInfoStepProps) => {
   // Local state
@@ -59,54 +59,59 @@ export const BasicInfoStep = ({
   const [validateEmailTrigger] = useLazyValidateEmailQuery();
 
   // API hooks
-  const { data: departments = [], isLoading: departmentsLoading } = useGetDepartmentsQuery();
-  const { data: positions = [], isLoading: positionsLoading } = useGetPositionsQuery({
-    departmentId: localData.departmentId || undefined
-  });
-
-  // Email validation function
-  const validateEmail = useCallback(async (email: string) => {
-    // Skip validation if email is empty or invalid format
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setEmailValidationState({
-        isValidating: false,
-        isValid: null,
-        message: "",
-      });
-      return;
-    }
-
-    // Skip validation in edit mode if email hasn't changed
-    if (mode === 'edit' && initialData && email === initialData.email) {
-      setEmailValidationState({
-        isValidating: false,
-        isValid: true,
-        message: "Current email",
-      });
-      return;
-    }
-
-    setEmailValidationState({
-      isValidating: true,
-      isValid: null,
-      message: "Checking availability...",
+  const { data: departments = [], isLoading: departmentsLoading } =
+    useGetDepartmentsQuery();
+  const { data: positions = [], isLoading: positionsLoading } =
+    useGetPositionsQuery({
+      departmentId: localData.departmentId || undefined,
     });
 
-    try {
-      const result = await validateEmailTrigger(email).unwrap();
+  // Email validation function
+  const validateEmail = useCallback(
+    async (email: string) => {
+      // Skip validation if email is empty or invalid format
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setEmailValidationState({
+          isValidating: false,
+          isValid: null,
+          message: "",
+        });
+        return;
+      }
+
+      // Skip validation in edit mode if email hasn't changed
+      if (mode === "edit" && initialData && email === initialData.email) {
+        setEmailValidationState({
+          isValidating: false,
+          isValid: true,
+          message: "Current email",
+        });
+        return;
+      }
+
       setEmailValidationState({
-        isValidating: false,
-        isValid: result.available,
-        message: result.message,
+        isValidating: true,
+        isValid: null,
+        message: "Checking availability...",
       });
-    } catch (error) {
-      setEmailValidationState({
-        isValidating: false,
-        isValid: false,
-        message: "Error checking email availability",
-      });
-    }
-  }, [mode, initialData, validateEmailTrigger]);
+
+      try {
+        const result = await validateEmailTrigger(email).unwrap();
+        setEmailValidationState({
+          isValidating: false,
+          isValid: result.available,
+          message: result.message,
+        });
+      } catch {
+        setEmailValidationState({
+          isValidating: false,
+          isValid: false,
+          message: "Error checking email availability",
+        });
+      }
+    },
+    [mode, initialData, validateEmailTrigger]
+  );
 
   // Handle email blur
   const handleEmailBlur = useCallback(() => {
@@ -128,7 +133,7 @@ export const BasicInfoStep = ({
   }, [data]);
 
   // Position list for selected department (filtered by API)
-  const availablePositions = positions;
+  // const availablePositions = positions;
 
   // Reset position when department changed
   const handleDepartmentChange = (departmentId: string) => {
@@ -176,11 +181,13 @@ export const BasicInfoStep = ({
     const phoneValid = localData.phone.replace(/\D/g, "").length >= 10;
 
     // Email availability validation - only check if we have validation result
-    const emailAvailabilityValid = 
+    const emailAvailabilityValid =
       emailValidationState.isValid === null || // No validation attempted yet
-      emailValidationState.isValid === true;   // Email is available
+      emailValidationState.isValid === true; // Email is available
 
-    return hasAllRequired && emailFormatValid && phoneValid && emailAvailabilityValid;
+    return (
+      hasAllRequired && emailFormatValid && phoneValid && emailAvailabilityValid
+    );
   };
 
   // Update validation state
@@ -258,16 +265,18 @@ export const BasicInfoStep = ({
                   <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
                 </div>
               )}
-              {!emailValidationState.isValidating && emailValidationState.isValid === true && (
-                <div className="absolute right-2 top-2.5">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                </div>
-              )}
-              {!emailValidationState.isValidating && emailValidationState.isValid === false && (
-                <div className="absolute right-2 top-2.5">
-                  <XCircle className="h-4 w-4 text-red-500" />
-                </div>
-              )}
+              {!emailValidationState.isValidating &&
+                emailValidationState.isValid === true && (
+                  <div className="absolute right-2 top-2.5">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  </div>
+                )}
+              {!emailValidationState.isValidating &&
+                emailValidationState.isValid === false && (
+                  <div className="absolute right-2 top-2.5">
+                    <XCircle className="h-4 w-4 text-red-500" />
+                  </div>
+                )}
             </div>
             {/* Email validation message */}
             {emailValidationState.message && (
@@ -313,11 +322,13 @@ export const BasicInfoStep = ({
               disabled={departmentsLoading}
             >
               <SelectTrigger>
-                <SelectValue placeholder={
-                  departmentsLoading 
-                    ? "Loading departments..." 
-                    : "Select department"
-                } />
+                <SelectValue
+                  placeholder={
+                    departmentsLoading
+                      ? "Loading departments..."
+                      : "Select department"
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
                 {departments.map((dept) => (

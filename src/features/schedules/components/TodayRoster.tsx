@@ -10,13 +10,11 @@ import {
   Users,
   ChevronRight,
   CheckCircle,
-  AlertCircle,
 } from "lucide-react";
 import { useGetTodayRosterQuery } from "@/store/api/schedulesApi";
 import { LoadingIndicator } from "@/shared/components/Loading";
 import { ScheduleStatusBadge } from "@/shared/components/ScheduleStatusBadge";
 import { formatScheduleTime } from "@/lib/formatter";
-import { ScheduleStatus } from "@empcon/types";
 
 interface TodayRosterProps {
   className?: string;
@@ -27,7 +25,7 @@ export const TodayRoster = ({ className }: TodayRosterProps) => {
   const { data: roster, isLoading, error, refetch } = useGetTodayRosterQuery();
 
   const handleViewAll = () => {
-    router.push('/admin/schedules');
+    router.push("/admin/schedules");
   };
 
   if (isLoading) {
@@ -36,7 +34,7 @@ export const TodayRoster = ({ className }: TodayRosterProps) => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Today's Schedule
+            Today&apos;s Schedule
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -52,13 +50,16 @@ export const TodayRoster = ({ className }: TodayRosterProps) => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Today's Schedule
+            Today&apos;s Schedule
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-4">
-            <p className="text-red-500">Failed to load today's schedule</p>
-            <button onClick={refetch} className="mt-2 text-blue-500 hover:underline">
+            <p className="text-red-500">Failed to load today&apos;s schedule</p>
+            <button
+              onClick={refetch}
+              className="mt-2 text-blue-500 hover:underline"
+            >
               Try again
             </button>
           </div>
@@ -77,7 +78,7 @@ export const TodayRoster = ({ className }: TodayRosterProps) => {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Today's Schedule
+            Today&apos;s Schedule
           </CardTitle>
           {handleViewAll && (
             <Button
@@ -119,7 +120,6 @@ export const TodayRoster = ({ className }: TodayRosterProps) => {
         ) : (
           <div className="space-y-3 max-h-80 overflow-y-auto">
             {schedules.map((schedule) => {
-
               return (
                 <div
                   key={schedule.id}
@@ -151,7 +151,7 @@ export const TodayRoster = ({ className }: TodayRosterProps) => {
 
                   {/* Status */}
                   <div className="flex items-center gap-2">
-                    <ScheduleStatusBadge 
+                    <ScheduleStatusBadge
                       status={schedule.status}
                       isCurrentlyWorking={schedule.isCurrentlyWorking || false}
                       showIcon={true}

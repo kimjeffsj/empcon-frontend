@@ -160,7 +160,7 @@ export const schedulesApi = baseApi.injectEndpoints({
           startDate,
           endDate,
           employeeId,
-          limit: 1000, // Large limit for calendar views
+          limit: 100, // Sufficient limit for employee calendar views
         },
       }),
       transformResponse: (response: {

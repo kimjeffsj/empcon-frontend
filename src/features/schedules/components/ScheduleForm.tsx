@@ -51,7 +51,6 @@ interface ScheduleFormProps {
   ) => Promise<void>;
 }
 
-
 export const ScheduleForm = ({
   open,
   onClose,
@@ -68,7 +67,7 @@ export const ScheduleForm = ({
 
   // Conflict checking - using BasicInfoStep pattern
   const [checkConflicts] = useLazyCheckScheduleConflictsQuery();
-  
+
   // Conflict validation state (similar to emailValidationState in BasicInfoStep)
   const [conflictValidationState, setConflictValidationState] = useState<{
     isValidating: boolean;
@@ -117,8 +116,8 @@ export const ScheduleForm = ({
   const endTime = watch("endTime");
 
   // Memoize stable initialData id for validateConflicts dependency
-  const excludeScheduleId = useMemo(() => 
-    mode === "edit" ? initialData?.id : undefined, 
+  const excludeScheduleId = useMemo(
+    () => (mode === "edit" ? initialData?.id : undefined),
     [mode, initialData?.id]
   );
 
@@ -135,7 +134,7 @@ export const ScheduleForm = ({
       return;
     }
 
-    setConflictValidationState(prev => ({
+    setConflictValidationState((prev) => ({
       ...prev,
       isValidating: true,
       message: "Checking for schedule conflicts...",
@@ -152,8 +151,8 @@ export const ScheduleForm = ({
       setConflictValidationState({
         isValidating: false,
         hasConflict: result.hasConflict,
-        message: result.hasConflict 
-          ? "Schedule conflict detected!" 
+        message: result.hasConflict
+          ? "Schedule conflict detected!"
           : "No schedule conflicts found",
         conflictingSchedules: result.conflictingSchedules || [],
       });
@@ -225,41 +224,48 @@ export const ScheduleForm = ({
   }, [selectedDate, endTimeInput, stableSetValue]);
 
   // Blur event handlers (similar to handleEmailBlur in BasicInfoStep)
-  const handleEmployeeChange = useCallback((value: string) => {
-    // Update form field first
-    stableSetValue("employeeId", value);
-    // Then check conflicts if all fields are ready
-    setTimeout(() => validateConflicts(), 100); // Small delay to ensure setValue completes
-  }, [stableSetValue, validateConflicts]);
+  const handleEmployeeChange = useCallback(
+    (value: string) => {
+      // Update form field first
+      stableSetValue("employeeId", value);
+      // Then check conflicts if all fields are ready
+      setTimeout(() => validateConflicts(), 100); // Small delay to ensure setValue completes
+    },
+    [stableSetValue, validateConflicts]
+  );
 
   const handleTimeBlur = useCallback(() => {
     validateConflicts();
   }, [validateConflicts]);
 
-  const handleFormSubmit = useCallback(async (
-    data: CreateScheduleRequest | UpdateScheduleRequest
-  ) => {
-    try {
-      await onSubmit(data);
-      onClose();
-      stableReset();
-      toast.success(mode === "edit" ? "Schedule Updated" : "Schedule Created", {
-        description:
+  const handleFormSubmit = useCallback(
+    async (data: CreateScheduleRequest | UpdateScheduleRequest) => {
+      try {
+        await onSubmit(data);
+        onClose();
+        stableReset();
+        toast.success(
+          mode === "edit" ? "Schedule Updated" : "Schedule Created",
+          {
+            description:
+              mode === "edit"
+                ? "The schedule has been updated successfully."
+                : "New schedule has been created successfully.",
+          }
+        );
+      } catch (error) {
+        toast.error(
           mode === "edit"
-            ? "The schedule has been updated successfully."
-            : "New schedule has been created successfully.",
-      });
-    } catch (error) {
-      toast.error(
-        mode === "edit"
-          ? "Failed to update schedule"
-          : "Failed to create schedule",
-        {
-          description: "Please check your input and try again.",
-        }
-      );
-    }
-  }, [onSubmit, onClose, stableReset, mode]);
+            ? "Failed to update schedule"
+            : "Failed to create schedule",
+          {
+            description: "Please check your input and try again.",
+          }
+        );
+      }
+    },
+    [onSubmit, onClose, stableReset, mode]
+  );
 
   const handleClose = useCallback(() => {
     onClose();
@@ -290,7 +296,10 @@ export const ScheduleForm = ({
               name="employeeId"
               control={control}
               render={({ field }) => (
-                <Select value={field.value} onValueChange={handleEmployeeChange}>
+                <Select
+                  value={field.value}
+                  onValueChange={handleEmployeeChange}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select an employee..." />
                   </SelectTrigger>
@@ -387,13 +396,15 @@ export const ScheduleForm = ({
               <AlertDescription>
                 Warning: This schedule conflicts with existing schedules for
                 this employee.
-                {conflictValidationState.conflictingSchedules?.map((conflict: any, index: number) => (
-                  <div key={index} className="mt-1 text-sm">
-                    • Conflict with schedule from{" "}
-                    {formatTimeForInput(conflict.startTime)} to{" "}
-                    {formatTimeForInput(conflict.endTime)}
-                  </div>
-                ))}
+                {conflictValidationState.conflictingSchedules?.map(
+                  (conflict: any, index: number) => (
+                    <div key={index} className="mt-1 text-sm">
+                      • Conflict with schedule from{" "}
+                      {formatTimeForInput(conflict.startTime)} to{" "}
+                      {formatTimeForInput(conflict.endTime)}
+                    </div>
+                  )
+                )}
               </AlertDescription>
             </Alert>
           )}
@@ -436,21 +447,21 @@ export const ScheduleForm = ({
             </div> */}
 
           {/* Position */}
-          {/* <div className="space-y-2">
-              <Label htmlFor="position">Position</Label>
-              <Controller
-                name="position"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    id="position"
-                    placeholder="e.g., Cashier, Server, Cook..."
-                    {...field}
-                  />
-                )}
-              />
-            </div>
-          </div> */}
+          <div className="space-y-2">
+            <Label htmlFor="position">Location</Label>
+            <Controller
+              name="position"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  id="position"
+                  placeholder="e.g., No. 3 or Westminster"
+                  {...field}
+                />
+              )}
+            />
+          </div>
+          {/* </div> */}
 
           {/* Notes */}
           <div className="space-y-2">
@@ -475,7 +486,9 @@ export const ScheduleForm = ({
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || (hasConflict === true && mode === "create")}
+              disabled={
+                isSubmitting || (hasConflict === true && mode === "create")
+              }
             >
               {isSubmitting
                 ? "Saving..."

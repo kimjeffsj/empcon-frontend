@@ -23,6 +23,7 @@ interface ScheduleTableProps {
   showDateColumn?: boolean;
   onEditClick?: (schedule: Schedule) => void;
   onDeleteClick?: (scheduleId: string) => void;
+  hideActions?: boolean; // Hide action buttons for read-only views
   emptyMessage?: string;
   emptyDescription?: string;
   className?: string;
@@ -33,6 +34,7 @@ export const ScheduleTable = ({
   showDateColumn = true,
   onEditClick,
   onDeleteClick,
+  hideActions = false,
   emptyMessage = "No schedules found",
   emptyDescription = "Try adjusting your filters or create a new schedule",
   className = "",
@@ -45,24 +47,24 @@ export const ScheduleTable = ({
           {showDateColumn && <TableHead>Date</TableHead>}
           <TableHead>Time</TableHead>
           <TableHead>Duration</TableHead>
-          <TableHead>Position</TableHead>
+          <TableHead>Location</TableHead>
           <TableHead>Status</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
+          {!hideActions && (
+            <TableHead className="text-right">Actions</TableHead>
+          )}
         </TableRow>
       </TableHeader>
       <TableBody>
         {schedules.length === 0 ? (
           <TableRow>
-            <TableCell 
-              colSpan={showDateColumn ? 7 : 6} 
+            <TableCell
+              colSpan={(showDateColumn ? 6 : 5) + (!hideActions ? 1 : 0)}
               className="text-center py-8"
             >
               <div className="flex flex-col items-center gap-2">
                 <Calendar className="h-8 w-8 text-gray-400" />
                 <p className="text-gray-500">{emptyMessage}</p>
-                <p className="text-sm text-gray-400">
-                  {emptyDescription}
-                </p>
+                <p className="text-sm text-gray-400">{emptyDescription}</p>
               </div>
             </TableCell>
           </TableRow>
@@ -111,24 +113,26 @@ export const ScheduleTable = ({
               <TableCell>
                 <ScheduleStatusBadge status={schedule.status} />
               </TableCell>
-              <TableCell className="text-right">
-                <div className="flex items-center justify-end gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onEditClick?.(schedule)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onDeleteClick?.(schedule.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
+              {!hideActions && (
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onEditClick?.(schedule)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onDeleteClick?.(schedule.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              )}
             </TableRow>
           ))
         )}
