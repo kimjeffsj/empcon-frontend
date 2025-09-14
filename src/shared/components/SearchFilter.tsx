@@ -2,14 +2,17 @@
 
 import { Card, CardContent } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/shared/ui/select";
+
+import { DateRange } from "react-day-picker";
 import { Search } from "lucide-react";
+import { DateRangePicker } from "@/shared/ui/date-range-picker";
 
 interface FilterOption {
   value: string;
@@ -20,6 +23,14 @@ interface SearchFilterProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
   placeholder?: string;
+
+  // DateRangePicker support
+  showDateRange?: boolean;
+  dateRange?: DateRange;
+  onDateRangeChange?: (dateRange: DateRange | undefined) => void;
+  dateRangePlaceholder?: string;
+
+  // Select filters support
   filters?: Array<{
     value: string;
     onChange: (value: string) => void;
@@ -29,11 +40,19 @@ interface SearchFilterProps {
   }>;
 }
 
-export function SearchFilter({ 
-  searchTerm, 
-  onSearchChange, 
+export function SearchFilter({
+  searchTerm,
+  onSearchChange,
   placeholder = "Search...",
-  filters = []
+
+  // DateRange props
+  showDateRange = false,
+  dateRange,
+  onDateRangeChange,
+  dateRangePlaceholder = "Select date range",
+
+  // Filter props
+  filters = [],
 }: SearchFilterProps) {
   return (
     <Card>
@@ -50,9 +69,19 @@ export function SearchFilter({
             />
           </div>
 
+          {/* DateRangePicker */}
+          {showDateRange && (
+            <DateRangePicker
+              dateRange={dateRange}
+              onDateRangeChange={onDateRangeChange}
+              placeholder={dateRangePlaceholder}
+              className="w-auto"
+            />
+          )}
+
           {/* Additional Filters */}
           {filters.map((filter, index) => (
-            <Select 
+            <Select
               key={index}
               value={filter.value}
               onValueChange={filter.onChange}
