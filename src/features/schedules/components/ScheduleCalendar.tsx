@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, momentLocalizer, View } from "react-big-calendar";
+import { Calendar, momentLocalizer, View, NavigateAction } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { useState, useMemo } from "react";
@@ -35,6 +35,7 @@ interface ScheduleCalendarProps {
   onSelectEvent?: (event: ScheduleEvent) => void;
   onSelectSlot?: (slotInfo: { start: Date; end: Date }) => void;
   onDateSelect?: (date: Date, daySchedules: Schedule[]) => void;
+  readOnly?: boolean; // Employee mode - disable management actions
 }
 
 export function ScheduleCalendar({
@@ -42,6 +43,7 @@ export function ScheduleCalendar({
   onSelectEvent,
   onSelectSlot,
   onDateSelect,
+  readOnly = false,
 }: ScheduleCalendarProps) {
   const [view, setView] = useState<View>("month");
   const [date, setDate] = useState(new Date());
@@ -79,7 +81,9 @@ export function ScheduleCalendar({
 
       return {
         id: `summary-${dateKey}`,
-        title: `📅 ${employeeCount} employee${employeeCount !== 1 ? "s" : ""}`,
+        title: readOnly 
+          ? `📅 ${employeeCount} schedule${employeeCount !== 1 ? "s" : ""}`
+          : `📅 ${employeeCount} employee${employeeCount !== 1 ? "s" : ""}`,
         start: new Date(date.getFullYear(), date.getMonth(), date.getDate()),
         end: new Date(
           date.getFullYear(),
@@ -90,7 +94,9 @@ export function ScheduleCalendar({
         ),
         resource: {
           schedule: daySchedules[0], // Keep first schedule for reference
-          employeeName: `${employeeCount} employees`,
+          employeeName: readOnly 
+            ? `${employeeCount} schedules`
+            : `${employeeCount} employees`,
           position: undefined,
           status: "SCHEDULED" as const,
           type: hasNightShifts ? "night" : hasOvertime ? "overtime" : "regular",
@@ -98,7 +104,7 @@ export function ScheduleCalendar({
         },
       };
     });
-  }, [schedules]);
+  }, [schedules, readOnly]);
 
   // Handle event click to select date and show details
   const handleEventSelect = (event: ScheduleEvent) => {
@@ -164,6 +170,7 @@ export function ScheduleCalendar({
     let backgroundColor = "#3174ad"; // default blue
     let borderColor = "#3174ad";
 
+
     // For summary events, use more neutral colors
     if (event.resource.daySchedules) {
       // Mixed status handling for summary events
@@ -220,7 +227,56 @@ export function ScheduleCalendar({
     };
   };
 
-  const CustomToolbar = ({ label, onNavigate, onView }: any) => (
+  // Day style getter for selected date highlighting
+  const dayPropGetter = (date: Date) => {
+    const normalizedDate = new Date(date);
+    normalizedDate.setHours(0, 0, 0, 0);
+
+    const normalizedSelectedDate = selectedDate ? new Date(selectedDate) : null;
+    if (normalizedSelectedDate) {
+      normalizedSelectedDate.setHours(0, 0, 0, 0);
+    }
+
+    const isSelected =
+      normalizedSelectedDate &&
+      normalizedDate.getTime() === normalizedSelectedDate.getTime();
+
+    const isToday = normalizedDate.toDateString() === new Date().toDateString();
+
+    // Priority: Selected date styling overrides today styling
+    if (isSelected) {
+      return {
+        className: "selected-date",
+        style: {
+          backgroundColor: "#f0fdf4", // green-50
+          borderRadius: "4px",
+          transition: "background-color 0.2s ease-in-out",
+        }
+      };
+    }
+
+    if (isToday) {
+      return {
+        className: "today-date", 
+        style: {
+          backgroundColor: "#fefce8", // yellow-50
+          borderRadius: "4px",
+        }
+      };
+    }
+
+    return {};
+  };
+
+  const CustomToolbar = ({ 
+    label, 
+    onNavigate, 
+    onView 
+  }: {
+    label: string;
+    onNavigate: (navigate: NavigateAction, date?: Date) => void;
+    onView: (view: View) => void;
+  }) => (
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center gap-2">
         <Button variant="outline" size="sm" onClick={() => onNavigate("PREV")}>
@@ -244,7 +300,7 @@ export function ScheduleCalendar({
             size="sm"
             onClick={() => {
               setView(viewName as View);
-              onView(viewName);
+              onView(viewName as View);
             }}
           >
             {viewName.charAt(0).toUpperCase() + viewName.slice(1)}
@@ -255,8 +311,6 @@ export function ScheduleCalendar({
   );
 
   const CustomEvent = ({ event }: { event: ScheduleEvent }) => {
-    const employeeCount = event.resource.daySchedules?.length || 1;
-
     return (
       <div className="flex items-center justify-between text-xs">
         <span className="font-medium truncate">{event.title}</span>
@@ -278,13 +332,13 @@ export function ScheduleCalendar({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <CalendarIcon className="h-4 w-4" />
-            Schedule Calendar
+            {readOnly ? "My Schedule" : "Schedule Calendar"}
           </CardTitle>
         </div>
       </CardHeader>
       <CardContent className="p-0">
         <div className="p-4">
-          <div style={{ height: "600px" }}>
+          <div style={{ height: "500px" }}>
             <Calendar
               localizer={localizer}
               events={events}
@@ -296,6 +350,7 @@ export function ScheduleCalendar({
               date={date}
               onNavigate={setDate}
               eventPropGetter={eventStyleGetter}
+              dayPropGetter={dayPropGetter}
               onSelectEvent={handleEventSelect}
               onSelectSlot={handleSlotSelect}
               onDrillDown={handleDrillDown}

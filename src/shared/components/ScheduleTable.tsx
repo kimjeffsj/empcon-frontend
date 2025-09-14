@@ -1,6 +1,6 @@
 import { Schedule } from "@empcon/types";
 import { Button } from "@/shared/ui/button";
-import { Calendar, Clock, Edit, Trash2 } from "lucide-react";
+import { Calendar, Clock, Edit, Trash2, FileText } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -23,7 +23,9 @@ interface ScheduleTableProps {
   showDateColumn?: boolean;
   onEditClick?: (schedule: Schedule) => void;
   onDeleteClick?: (scheduleId: string) => void;
+  onRequestLeave?: (schedule: Schedule) => void; // Employee action to request leave
   hideActions?: boolean; // Hide action buttons for read-only views
+  readOnly?: boolean; // Employee mode - show only Request Leave action
   emptyMessage?: string;
   emptyDescription?: string;
   className?: string;
@@ -34,7 +36,9 @@ export const ScheduleTable = ({
   showDateColumn = true,
   onEditClick,
   onDeleteClick,
+  onRequestLeave,
   hideActions = false,
+  readOnly = false,
   emptyMessage = "No schedules found",
   emptyDescription = "Try adjusting your filters or create a new schedule",
   className = "",
@@ -116,20 +120,36 @@ export const ScheduleTable = ({
               {!hideActions && (
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onEditClick?.(schedule)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onDeleteClick?.(schedule.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {readOnly ? (
+                      // Employee mode: Show only Request Leave
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onRequestLeave?.(schedule)}
+                        disabled={schedule.status === "CANCELLED" || schedule.status === "COMPLETED"}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Request Leave
+                      </Button>
+                    ) : (
+                      // Manager mode: Show Edit and Delete
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEditClick?.(schedule)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDeleteClick?.(schedule.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </TableCell>
               )}

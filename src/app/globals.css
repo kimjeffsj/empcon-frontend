@@ -162,3 +162,31 @@ html {
     @apply bg-background text-foreground;
   }
 }
+
+/* React Big Calendar Custom Styles */
+@layer components {
+  /* Selected date styling - Light green without border */
+  .selected-date {
+    background-color: #f0fdf4 !important; /* green-50 */
+    border-radius: 4px !important;
+    transition: background-color 0.2s ease-in-out !important;
+  }
+
+  /* Today date styling */
+  .today-date {
+    background-color: #fefce8 !important; /* yellow-50 */
+    /* border: 1px solid #ca8a04 !important; yellow-600 */
+    border-radius: 4px !important;
+  }
+
+  /* Enhanced month view date cells - Remove hover effects */
+  .rbc-month-view .rbc-date-cell {
+    cursor: pointer;
+  }
+
+  /* Ensure selected state overrides today when both apply */
+  .selected-date.today-date {
+    background-color: #f0fdf4 !important; /* green-50 wins */
+    border: none !important;
+  }
+}
