@@ -20,5 +20,4 @@ export type {
   EmployeeClockSummary,
   TimeAdjustmentModalData,
   ClockNotification,
-  TimeDisplay,
 } from '../types/timeclock.types';

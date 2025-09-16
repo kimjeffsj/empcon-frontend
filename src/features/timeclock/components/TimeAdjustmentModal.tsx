@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import { useAdjustTimeEntryMutation } from "@/store/api/timeclockApi";
 import { TimeEntry } from "@empcon/types";
-import { formatTimeDisplay, formatDateForDisplay } from "../hooks/useTimeEntries";
+import { formatPacificTime12, formatPacificDate } from "@/shared/utils/dateTime";
 import { toast } from "sonner";
 
 // Form validation schema
@@ -170,7 +170,7 @@ export function TimeAdjustmentModal({
                 <div>
                   <p className="text-sm font-medium">Date</p>
                   <p className="text-sm text-gray-600">
-                    {formatDateForDisplay(timeEntry.clockInTime)}
+                    {formatPacificDate(timeEntry.clockInTime)}
                   </p>
                 </div>
               </div>
@@ -182,7 +182,7 @@ export function TimeAdjustmentModal({
                 <div>
                   <p className="text-sm font-medium">Scheduled Position</p>
                   <p className="text-sm text-gray-600">
-                    {timeEntry.schedule.position} ({formatTimeDisplay(timeEntry.schedule.startTime).time12} - {formatTimeDisplay(timeEntry.schedule.endTime).time12})
+                    {timeEntry.schedule.position} ({formatPacificTime12(timeEntry.schedule.startTime)} - {formatPacificTime12(timeEntry.schedule.endTime)})
                   </p>
                 </div>
               </div>
@@ -202,14 +202,14 @@ export function TimeAdjustmentModal({
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-blue-700 dark:text-blue-300">Clock In:</span>
                   <span className="font-medium text-blue-800 dark:text-blue-200">
-                    {formatTimeDisplay(timeEntry.clockInTime).time12}
+                    {formatPacificTime12(timeEntry.clockInTime)}
                   </span>
                 </div>
                 
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-blue-700 dark:text-blue-300">Clock Out:</span>
                   <span className="font-medium text-blue-800 dark:text-blue-200">
-                    {timeEntry.clockOutTime ? formatTimeDisplay(timeEntry.clockOutTime).time12 : "Not clocked out"}
+                    {timeEntry.clockOutTime ? formatPacificTime12(timeEntry.clockOutTime) : "Not clocked out"}
                   </span>
                 </div>
 
@@ -411,8 +411,8 @@ function calculateTimeChanges(
     clockInChanged,
     clockOutChanged,
     hoursChanged: Math.abs(hoursDifference) > 0.1,
-    newClockInDisplay: formatTimeDisplay(newClockIn.toISOString()).time12,
-    newClockOutDisplay: newClockOut ? formatTimeDisplay(newClockOut.toISOString()).time12 : null,
+    newClockInDisplay: formatPacificTime12(newClockIn.toISOString()),
+    newClockOutDisplay: newClockOut ? formatPacificTime12(newClockOut.toISOString()) : null,
     newTotalHours: newTotalHours ? newTotalHours.toFixed(1) : null,
     hoursDifference,
     significantChange,

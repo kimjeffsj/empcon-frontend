@@ -1,5 +1,6 @@
 // Utility functions for date/time handling
-import { fromZonedTime, toZonedTime, format } from 'date-fns-tz';
+import { toZonedTime, format } from 'date-fns-tz';
+import { formatDistanceToNow } from 'date-fns';
 
 // ===============================
 // CONSTANTS
@@ -37,16 +38,8 @@ export const formatDateTimeForDisplay = (
 };
 
 // ===============================
-// PACIFIC TIME UTILITIES
+// SIMPLE PACIFIC TIME UTILITIES
 // ===============================
-
-/**
- * Convert UTC datetime to Pacific Time
- */
-export const convertUTCToPacific = (utcDateTime: string | Date): Date => {
-  const utcDate = typeof utcDateTime === 'string' ? new Date(utcDateTime) : utcDateTime;
-  return toZonedTime(utcDate, VANCOUVER_TIMEZONE);
-};
 
 /**
  * Get current date in Pacific Time (YYYY-MM-DD format)
@@ -55,31 +48,6 @@ export const convertUTCToPacific = (utcDateTime: string | Date): Date => {
 export const getPacificToday = (): string => {
   const pacificNow = toZonedTime(new Date(), VANCOUVER_TIMEZONE);
   return format(pacificNow, 'yyyy-MM-dd', { timeZone: VANCOUVER_TIMEZONE });
-};
-
-/**
- * Get Pacific Time date boundaries in UTC format for API requests
- * This is crucial for requesting "today's" data from server
- */
-export const getPacificDateBoundaries = (pacificDate?: string): {
-  startOfDayUTC: string;
-  endOfDayUTC: string;
-} => {
-  // Use provided date or today in Pacific Time
-  const dateStr = pacificDate || getPacificToday();
-  
-  // Create Pacific Time date at midnight
-  const pacificMidnight = new Date(`${dateStr}T00:00:00`);
-  const pacificEndOfDay = new Date(`${dateStr}T23:59:59.999`);
-  
-  // Convert Pacific Time to UTC for API requests
-  const startOfDayUTC = fromZonedTime(pacificMidnight, VANCOUVER_TIMEZONE);
-  const endOfDayUTC = fromZonedTime(pacificEndOfDay, VANCOUVER_TIMEZONE);
-  
-  return {
-    startOfDayUTC: startOfDayUTC.toISOString(),
-    endOfDayUTC: endOfDayUTC.toISOString(),
-  };
 };
 
 /**
@@ -93,11 +61,11 @@ export const formatPacificTime = (utcDateTime: string | Date): string => {
 };
 
 /**
- * Format UTC datetime as Pacific Time with date (MMM d, yyyy HH:mm format)
+ * Format UTC datetime as Pacific Time (12-hour format: h:mm a)
  */
-export const formatPacificDateTime = (utcDateTime: string | Date): string => {
+export const formatPacificTime12 = (utcDateTime: string | Date): string => {
   const utcDate = typeof utcDateTime === 'string' ? new Date(utcDateTime) : utcDateTime;
-  return format(toZonedTime(utcDate, VANCOUVER_TIMEZONE), 'MMM d, yyyy HH:mm', { 
+  return format(toZonedTime(utcDate, VANCOUVER_TIMEZONE), 'h:mm a', { 
     timeZone: VANCOUVER_TIMEZONE 
   });
 };
@@ -110,15 +78,6 @@ export const formatPacificDate = (utcDateTime: string | Date): string => {
   return format(toZonedTime(utcDate, VANCOUVER_TIMEZONE), 'MMM d, yyyy', { 
     timeZone: VANCOUVER_TIMEZONE 
   });
-};
-
-/**
- * Check if UTC datetime falls within Pacific Time "today"
- */
-export const isPacificToday = (utcDateTime: string | Date): boolean => {
-  const pacificToday = getPacificToday();
-  const pacificDate = format(convertUTCToPacific(utcDateTime), 'yyyy-MM-dd');
-  return pacificDate === pacificToday;
 };
 
 /**
@@ -157,35 +116,10 @@ export const calculateDuration = (
   return `${hours}h ${minutes}m`;
 };
 
-// ===============================
-// API HELPER UTILITIES  
-// ===============================
-
 /**
- * Get today's date range in UTC format for API requests
- * Returns Pacific Time "today" boundaries as UTC timestamps
+ * Format relative time (e.g., "2 hours ago", "3 minutes ago")
  */
-export const getTodayRangeForAPI = (): {
-  startDate: string;
-  endDate: string;
-} => {
-  const { startOfDayUTC, endOfDayUTC } = getPacificDateBoundaries();
-  return {
-    startDate: startOfDayUTC.split('T')[0], // YYYY-MM-DD format
-    endDate: endOfDayUTC.split('T')[0],     // YYYY-MM-DD format
-  };
-};
-
-/**
- * Get specific date range in UTC format for API requests
- */
-export const getDateRangeForAPI = (pacificDate: string): {
-  startDate: string;
-  endDate: string;
-} => {
-  const { startOfDayUTC, endOfDayUTC } = getPacificDateBoundaries(pacificDate);
-  return {
-    startDate: startOfDayUTC.split('T')[0], // YYYY-MM-DD format
-    endDate: endOfDayUTC.split('T')[0],     // YYYY-MM-DD format
-  };
+export const formatRelativeTime = (utcDateTime: string | Date): string => {
+  const utcDate = typeof utcDateTime === 'string' ? new Date(utcDateTime) : utcDateTime;
+  return formatDistanceToNow(utcDate, { addSuffix: true });
 };

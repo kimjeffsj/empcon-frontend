@@ -15,7 +15,7 @@ import {
   Timer,
 } from "lucide-react";
 import { useClockStatus } from "../hooks/useClockStatus";
-import { formatTimeDisplay } from "../hooks/useTimeEntries";
+import { formatPacificTime12, formatRelativeTime } from "@/shared/utils/dateTime";
 import { ClockStatusCardData, CLOCK_STATUS_COLORS } from "../types/timeclock.types";
 
 interface ClockStatusCardProps {
@@ -77,7 +77,7 @@ export function ClockStatusCard({
                 <p className="font-medium text-sm">{statusData.statusText}</p>
                 {statusData.lastActionTime && (
                   <p className="text-xs text-gray-500">
-                    {formatTimeDisplay(statusData.lastActionTime).relative}
+                    {formatRelativeTime(statusData.lastActionTime)}
                   </p>
                 )}
               </div>
@@ -158,7 +158,7 @@ export function ClockStatusCard({
               <LogIn className="h-5 w-5 text-green-600 mt-0.5" />
               <div className="flex-1">
                 <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                  Clocked in at {formatTimeDisplay(currentTimeEntry.clockInTime).time12}
+                  Clocked in at {formatPacificTime12(currentTimeEntry.clockInTime)}
                 </p>
                 {currentTimeEntry.schedule?.position && (
                   <p className="text-xs text-green-700 dark:text-green-300">
@@ -305,7 +305,7 @@ function calculateStatusData(
     scheduledHours,
     remainingHours: Math.max(0, scheduledHours - todayHours),
     nextSchedule: nextSchedule ? {
-      time: formatTimeDisplay(nextSchedule.startTime).time12,
+      time: formatPacificTime12(nextSchedule.startTime),
       position: nextSchedule.position || "Unknown Position",
     } : undefined,
   };

@@ -16,7 +16,6 @@ import {
 import {
   TimeEntryDisplay,
   TimeEntryListConfig,
-  TimeDisplay,
   TIME_ENTRY_STATUS_COLORS,
 } from "../types/timeclock.types";
 import { toast } from "sonner";
@@ -247,12 +246,12 @@ function transformTimeEntryForDisplay(entry: TimeEntry): TimeEntryDisplay {
 
   return {
     id: entry.id,
-    date: formatDateForDisplay(entry.clockInTime),
+    date: formatPacificDate(entry.clockInTime),
     schedulePosition: entry.schedule?.position,
-    clockInTime: formatTimeForDisplay(entry.clockInTime),
-    clockOutTime: entry.clockOutTime ? formatTimeForDisplay(entry.clockOutTime) : undefined,
-    adjustedStartTime: entry.adjustedStartTime ? formatTimeForDisplay(entry.adjustedStartTime) : undefined,
-    adjustedEndTime: entry.adjustedEndTime ? formatTimeForDisplay(entry.adjustedEndTime) : undefined,
+    clockInTime: formatPacificTime(entry.clockInTime),
+    clockOutTime: entry.clockOutTime ? formatPacificTime(entry.clockOutTime) : undefined,
+    adjustedStartTime: entry.adjustedStartTime ? formatPacificTime(entry.adjustedStartTime) : undefined,
+    adjustedEndTime: entry.adjustedEndTime ? formatPacificTime(entry.adjustedEndTime) : undefined,
     totalHours: entry.totalHours,
     status: entry.status,
     statusColor,
@@ -263,42 +262,3 @@ function transformTimeEntryForDisplay(entry: TimeEntry): TimeEntryDisplay {
   };
 }
 
-// Utility functions for time formatting - now using Pacific Time
-export function formatTimeForDisplay(isoString: string): string {
-  return formatPacificTime(isoString);
-}
-
-export function formatDateForDisplay(isoString: string): string {
-  return formatPacificDate(isoString);
-}
-
-export function formatTimeDisplay(isoString: string): TimeDisplay {
-  const date = new Date(isoString);
-  const now = new Date();
-  
-  return {
-    time12: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
-    time24: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
-    dateTime: date.toLocaleString([], { 
-      month: 'short', 
-      day: 'numeric', 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    }),
-    relative: getRelativeTime(date, now),
-  };
-}
-
-function getRelativeTime(date: Date, now: Date): string {
-  const diffMs = now.getTime() - date.getTime();
-  const diffMinutes = Math.floor(diffMs / (1000 * 60));
-  const diffHours = Math.floor(diffMinutes / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMinutes < 1) return "Just now";
-  if (diffMinutes < 60) return `${diffMinutes}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  
-  return date.toLocaleDateString();
-}

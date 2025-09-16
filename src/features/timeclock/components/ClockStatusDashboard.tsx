@@ -13,12 +13,12 @@ import {
   AlertTriangle,
   CheckCircle2,
 } from "lucide-react";
-import { useGetTodayClockStatusQuery } from "@/store/api/timeclockApi";
+import { useGetTimeEntriesQuery } from "@/store/api/timeclockApi";
 import {
   EmployeeClockSummary,
   EMPLOYEE_STATUS_COLORS,
 } from "../types/timeclock.types";
-import { formatTimeDisplay } from "../hooks/useTimeEntries";
+import { formatPacificTime12 } from "@/shared/utils/dateTime";
 import { SearchFilter } from "@/shared/components/SearchFilter";
 import { getPacificToday } from "@/shared/utils/dateTime";
 
@@ -44,60 +44,77 @@ export function ClockStatusDashboard({
   
   // API Query with polling for real-time updates
   const {
-    data: dashboardData,
+    data: timeEntriesData,
     isLoading,
     error,
     refetch,
-  } = useGetTodayClockStatusQuery({ date: targetDate }, {
+  } = useGetTimeEntriesQuery({
+    startDate: targetDate,
+    endDate: targetDate,
+    limit: 1000, // Get all entries for today
+  }, {
     pollingInterval: autoRefresh ? 60000 : undefined, // 1 minute
   });
 
-  // Transform data for display
+  // Transform TimeEntries data for display
   const employeeSummaries: EmployeeClockSummary[] = useMemo(() => {
-    if (!dashboardData?.employees) return [];
+    if (!timeEntriesData?.data || timeEntriesData.data.length === 0) return [];
 
-    return dashboardData.employees.map((emp) => {
-      // Determine overall status
+    // Group time entries by employee
+    const entriesByEmployee = timeEntriesData.data.reduce((acc, entry) => {
+      const employeeId = entry.employeeId;
+      if (!acc[employeeId]) {
+        acc[employeeId] = [];
+      }
+      acc[employeeId].push(entry);
+      return acc;
+    }, {} as Record<string, typeof timeEntriesData.data>);
+
+    // Transform each employee's data
+    return Object.entries(entriesByEmployee).map(([employeeId, entries]) => {
+      // Get employee info from first entry (all entries have same employee info)
+      const firstEntry = entries[0];
+      const employee = firstEntry.employee;
+      
+      // Calculate worked hours
+      const completedEntries = entries.filter(entry => entry.status === "CLOCKED_OUT");
+      const workedHours = completedEntries.reduce((sum, entry) => sum + (entry.totalHours || 0), 0);
+      
+      // Find current clocked-in entry
+      const currentEntry = entries.find(entry => entry.status === "CLOCKED_IN");
+      
+      // Calculate basic statistics
+      const isCurrentlyClocked = !!currentEntry;
+      const completedShifts = completedEntries.length;
+      const isOvertime = workedHours > 8;
+      
+      // Determine status
       let status: EmployeeClockSummary["currentStatus"];
-      let isLate = false;
-      let isOvertime = false;
-
-      if (emp.clockStatus.isCurrentlyClocked) {
-        status = "IN_PROGRESS";
-        isOvertime = emp.summary.workedHours > 8;
-      } else if (emp.summary.status === "COMPLETED") {
-        status = "COMPLETED";
-        isOvertime = emp.summary.workedHours > emp.summary.scheduledHours + 0.5;
-      } else if (emp.summary.status === "LATE") {
-        status = "LATE";
-        isLate = true;
-      } else if (emp.summary.status === "OVERTIME") {
-        status = "OVERTIME";
-        isOvertime = true;
+      if (isCurrentlyClocked) {
+        status = isOvertime ? "OVERTIME" : "IN_PROGRESS";
+      } else if (completedShifts > 0) {
+        status = isOvertime ? "OVERTIME" : "COMPLETED";
       } else {
         status = "NOT_STARTED";
       }
 
       return {
-        employeeId: emp.employeeId,
-        employeeName: `${emp.employee.firstName || ""} ${
-          emp.employee.lastName || ""
-        }`.trim(),
-        employeeNumber: emp.employee.employeeNumber,
+        employeeId,
+        employeeName: `${employee?.firstName || ""} ${employee?.lastName || ""}`.trim() || "Unknown",
+        employeeNumber: employee?.employeeNumber,
         currentStatus: status,
         statusColor: EMPLOYEE_STATUS_COLORS[status],
-        clockedIn: emp.clockStatus.isCurrentlyClocked,
-        lastClockInTime: emp.clockStatus.currentTimeEntry?.clockInTime,
-        todaySchedules: emp.schedules.length,
-        completedShifts: emp.schedules.filter((s) => s.status === "COMPLETED")
-          .length,
-        workedHours: emp.summary.workedHours,
-        scheduledHours: emp.summary.scheduledHours,
-        isLate,
+        clockedIn: isCurrentlyClocked,
+        lastClockInTime: currentEntry?.clockInTime,
+        todaySchedules: entries.length, // Count of shifts scheduled
+        completedShifts,
+        workedHours: Number(workedHours.toFixed(2)),
+        scheduledHours: 8, // Default, could be calculated from schedule data
+        isLate: false, // TODO: Calculate based on schedule
         isOvertime,
       };
     });
-  }, [dashboardData]);
+  }, [timeEntriesData]);
 
   // Apply filters
   const filteredEmployees = useMemo(() => {
@@ -135,7 +152,7 @@ export function ClockStatusDashboard({
 
   // Calculate dashboard summary
   const dashboardSummary = useMemo(() => {
-    if (!dashboardData) return null;
+    if (employeeSummaries.length === 0) return null;
 
     const totalEmployees = employeeSummaries.length;
     const clockedInCount = employeeSummaries.filter(
@@ -162,7 +179,7 @@ export function ClockStatusDashboard({
             )
           : 0,
     };
-  }, [employeeSummaries, dashboardData]);
+  }, [employeeSummaries]);
 
   if (isLoading) {
     return (
@@ -390,7 +407,7 @@ function EmployeeStatusCard({
             <div className="text-xs text-gray-600 dark:text-gray-400">
               <p>
                 Clocked in at{" "}
-                {formatTimeDisplay(employee.lastClockInTime).time12}
+                {formatPacificTime12(employee.lastClockInTime)}
               </p>
             </div>
           )}

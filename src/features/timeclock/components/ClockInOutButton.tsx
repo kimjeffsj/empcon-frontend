@@ -8,7 +8,7 @@ import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { AlertTriangle, MapPin, Clock } from "lucide-react";
 import { useClockStatus } from "../hooks/useClockStatus";
-import { formatTimeDisplay } from "../hooks/useTimeEntries";
+import { formatPacificTime12 } from "@/shared/utils/dateTime";
 
 interface ClockInOutButtonProps {
   employeeId?: string;
@@ -151,7 +151,7 @@ export function ClockInOutButton({
             <div className="flex items-center space-x-2">
               <Clock className="h-4 w-4 text-green-600" />
               <span className="text-sm font-medium text-green-800 dark:text-green-200">
-                Clocked in at {formatTimeDisplay(currentTimeEntry.clockInTime).time12}
+                Clocked in at {formatPacificTime12(currentTimeEntry.clockInTime)}
               </span>
             </div>
             {currentTimeEntry.schedule?.position && (
@@ -172,7 +172,7 @@ export function ClockInOutButton({
               </span>
             </div>
             <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-              Starts at {formatTimeDisplay(clockStatus.nextSchedule.startTime).time12}
+              Starts at {formatPacificTime12(clockStatus.nextSchedule.startTime)}
               {clockStatus.nextSchedule.timeUntilClockIn > 0 && (
                 <span className="ml-2 text-xs">
                   (Available in {clockStatus.nextSchedule.timeUntilClockIn}m)
@@ -188,7 +188,7 @@ export function ClockInOutButton({
             <div className="flex items-center space-x-2">
               <AlertTriangle className="h-4 w-4 text-amber-600" />
               <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                Scheduled until {formatTimeDisplay(currentTimeEntry.schedule.endTime).time12}
+                Scheduled until {formatPacificTime12(currentTimeEntry.schedule.endTime)}
               </span>
             </div>
             <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">

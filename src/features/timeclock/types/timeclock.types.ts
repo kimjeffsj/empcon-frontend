@@ -128,14 +128,6 @@ export interface ClockNotification {
   onAction?: () => void;
 }
 
-// Date/Time Utilities
-export interface TimeDisplay {
-  time12: string;      // "9:05 AM"
-  time24: string;      // "09:05"
-  dateTime: string;    // "Jan 15, 9:05 AM"
-  relative: string;    // "2 hours ago"
-  duration?: string;   // "8h 30m" (for total hours)
-}
 
 // Constants for UI
 export const CLOCK_STATUS_COLORS = {

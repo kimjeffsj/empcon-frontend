@@ -1,5 +1,4 @@
 import {
-  ApiResponse,
   ClockInRequest,
   ClockInResponse,
   ClockOutRequest,
@@ -9,8 +8,6 @@ import {
   GetTimeEntriesResponse,
   TimeAdjustmentRequest,
   TimeAdjustmentResponse,
-  TodayClockStatusRequest,
-  TodayClockStatusResponse,
   TimeEntry,
   TimeClockApiResponse,
 } from "@empcon/types";
@@ -25,7 +22,7 @@ export const timeclockApi = baseApi.injectEndpoints({
         method: "POST",
         body: clockInData,
       }),
-      transformResponse: (response: TimeClockApiResponse<ClockInResponse>) => 
+      transformResponse: (response: TimeClockApiResponse<ClockInResponse>) =>
         response.data!,
       invalidatesTags: [
         "TimeEntry",
@@ -41,7 +38,7 @@ export const timeclockApi = baseApi.injectEndpoints({
         method: "POST",
         body: clockOutData,
       }),
-      transformResponse: (response: TimeClockApiResponse<ClockOutResponse>) => 
+      transformResponse: (response: TimeClockApiResponse<ClockOutResponse>) =>
         response.data!,
       invalidatesTags: [
         "TimeEntry",
@@ -59,8 +56,9 @@ export const timeclockApi = baseApi.injectEndpoints({
         url: `/timeclock/status/${employeeId}`,
         params: date ? { date } : {},
       }),
-      transformResponse: (response: TimeClockApiResponse<ClockStatusResponse>) => 
-        response.data!,
+      transformResponse: (
+        response: TimeClockApiResponse<ClockStatusResponse>
+      ) => response.data!,
       providesTags: (result, error, { employeeId }) => [
         { type: "TimeEntry", id: "STATUS" },
         { type: "TimeEntry", id: `STATUS_${employeeId}` },
@@ -109,8 +107,9 @@ export const timeclockApi = baseApi.injectEndpoints({
         method: "PUT",
         body: data,
       }),
-      transformResponse: (response: TimeClockApiResponse<TimeAdjustmentResponse>) => 
-        response.data!,
+      transformResponse: (
+        response: TimeClockApiResponse<TimeAdjustmentResponse>
+      ) => response.data!,
       invalidatesTags: (result, error, { id }) => [
         "TimeEntry",
         { type: "TimeEntry", id },
@@ -119,21 +118,6 @@ export const timeclockApi = baseApi.injectEndpoints({
       ],
     }),
 
-    // GET /api/timeclock/today-status - Today's Clock Status (Admin Dashboard)
-    getTodayClockStatus: builder.query<
-      TodayClockStatusResponse,
-      TodayClockStatusRequest | void
-    >({
-      query: (params = {}) => ({
-        url: "/timeclock/today-status",
-        params: params.date ? { date: params.date } : {},
-      }),
-      transformResponse: (response: TimeClockApiResponse<TodayClockStatusResponse>) => 
-        response.data!,
-      providesTags: [{ type: "TimeEntry", id: "TODAY_STATUS" }],
-      // Refetch every 3 minutes for admin dashboard
-      // pollingInterval: 3 * 60 * 1000, // 3 minutes
-    }),
 
     // Utility: Get Employee's Today Time Entries
     getEmployeeTodayTimeEntries: builder.query<
@@ -144,8 +128,8 @@ export const timeclockApi = baseApi.injectEndpoints({
         url: "/timeclock/entries",
         params: {
           employeeId,
-          startDate: date || new Date().toISOString().split('T')[0],
-          endDate: date || new Date().toISOString().split('T')[0],
+          startDate: date || new Date().toISOString().split("T")[0],
+          endDate: date || new Date().toISOString().split("T")[0],
           limit: 10,
         },
       }),
@@ -191,27 +175,39 @@ export const timeclockApi = baseApi.injectEndpoints({
 
     // Development/Testing Endpoints (if needed)
     testPayrollRounding: builder.query<
-      { originalMinutes: number; roundedMinutes: number; originalTime: string; roundedTime: string },
+      {
+        originalMinutes: number;
+        roundedMinutes: number;
+        originalTime: string;
+        roundedTime: string;
+      },
       { time: string }
     >({
       query: ({ time }) => ({
         url: "/timeclock/test-rounding",
         params: { time },
       }),
-      transformResponse: (response: TimeClockApiResponse<any>) => response.data!,
+      transformResponse: (response: TimeClockApiResponse<any>) =>
+        response.data!,
       // Don't cache test endpoints
       keepUnusedDataFor: 0,
     }),
 
     testGracePeriod: builder.query<
-      { originalTime: string; adjustedTime: string; gracePeriodApplied: boolean; withinGracePeriod: boolean },
+      {
+        originalTime: string;
+        adjustedTime: string;
+        gracePeriodApplied: boolean;
+        withinGracePeriod: boolean;
+      },
       { actualTime: string; scheduledTime: string; gracePeriodMinutes?: number }
     >({
       query: ({ actualTime, scheduledTime, gracePeriodMinutes }) => ({
         url: "/timeclock/test-grace-period",
         params: { actualTime, scheduledTime, gracePeriodMinutes },
       }),
-      transformResponse: (response: TimeClockApiResponse<any>) => response.data!,
+      transformResponse: (response: TimeClockApiResponse<any>) =>
+        response.data!,
       // Don't cache test endpoints
       keepUnusedDataFor: 0,
     }),
@@ -222,21 +218,20 @@ export const {
   // Clock Operations
   useClockInMutation,
   useClockOutMutation,
-  
+
   // Status Queries
   useGetClockStatusQuery,
   useLazyGetClockStatusQuery,
-  
+
   // Time Entries
   useGetTimeEntriesQuery,
   useLazyGetTimeEntriesQuery,
   useGetEmployeeTodayTimeEntriesQuery,
   useGetEmployeeTimeEntriesByRangeQuery,
-  
+
   // Admin Operations
   useAdjustTimeEntryMutation,
-  useGetTodayClockStatusQuery,
-  
+
   // Testing/Development
   useTestPayrollRoundingQuery,
   useTestGracePeriodQuery,
