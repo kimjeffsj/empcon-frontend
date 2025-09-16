@@ -79,7 +79,7 @@ export interface EmployeeClockSummary {
   employeeName: string;
   employeeNumber?: string;
   currentStatus: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "LATE" | "OVERTIME";
-  statusColor: "green" | "red" | "yellow" | "blue" | "gray";
+  statusColor: "green" | "red" | "yellow" | "blue" | "gray" | "orange";
   clockedIn: boolean;
   lastClockInTime?: string;
   todaySchedules: number;
