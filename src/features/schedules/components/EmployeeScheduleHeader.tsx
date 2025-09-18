@@ -18,13 +18,13 @@ export const EmployeeScheduleHeader = ({
   const dateRanges = useMemo(() => {
     const now = new Date();
 
-    // Today
+    // Today (expanded to 3-day range for timezone-safe API request)
     const today = {
-      start: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+      start: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1),
       end: new Date(
         now.getFullYear(),
         now.getMonth(),
-        now.getDate(),
+        now.getDate() + 1,
         23,
         59,
         59,
@@ -101,7 +101,14 @@ export const EmployeeScheduleHeader = ({
 
   // Calculate stats
   const stats = useMemo(() => {
-    const todaySchedules = todayData?.data || [];
+    // Filter today's schedules from 3-day range using client-side timezone-safe filtering
+    const allTodayData = todayData?.data || [];
+    const todayDateString = new Date().toDateString();
+    const todaySchedules = allTodayData.filter((schedule) => {
+      const scheduleDate = new Date(schedule.startTime).toDateString();
+      return scheduleDate === todayDateString;
+    });
+
     const weekSchedules = weekData?.data || [];
     const monthSchedules = monthData?.data || [];
     const upcomingSchedules = nextShiftsData?.data || [];

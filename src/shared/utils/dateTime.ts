@@ -1,11 +1,11 @@
 // Utility functions for date/time handling
-import { toZonedTime, format } from 'date-fns-tz';
-import { formatDistanceToNow } from 'date-fns';
+import { toZonedTime, format } from "date-fns-tz";
+import { formatDistanceToNow } from "date-fns";
 
 // ===============================
 // CONSTANTS
 // ===============================
-export const VANCOUVER_TIMEZONE = 'America/Vancouver';
+export const VANCOUVER_TIMEZONE = "America/Vancouver";
 
 // ===============================
 // LEGACY UTILITIES (Keep for backward compatibility)
@@ -25,18 +25,6 @@ export const combineDateAndTime = (date: string, time: string): string => {
   return dateObj.toISOString();
 };
 
-export const getCurrentDateInTimezone = (): Date => {
-  return new Date();
-};
-
-export const formatDateTimeForDisplay = (
-  dateTime: string | Date,
-  options?: Intl.DateTimeFormatOptions
-): string => {
-  const date = new Date(dateTime);
-  return date.toLocaleString('en-US', options);
-};
-
 // ===============================
 // SIMPLE PACIFIC TIME UTILITIES
 // ===============================
@@ -47,16 +35,17 @@ export const formatDateTimeForDisplay = (
  */
 export const getPacificToday = (): string => {
   const pacificNow = toZonedTime(new Date(), VANCOUVER_TIMEZONE);
-  return format(pacificNow, 'yyyy-MM-dd', { timeZone: VANCOUVER_TIMEZONE });
+  return format(pacificNow, "yyyy-MM-dd", { timeZone: VANCOUVER_TIMEZONE });
 };
 
 /**
  * Format UTC datetime as Pacific Time (HH:mm format)
  */
 export const formatPacificTime = (utcDateTime: string | Date): string => {
-  const utcDate = typeof utcDateTime === 'string' ? new Date(utcDateTime) : utcDateTime;
-  return format(toZonedTime(utcDate, VANCOUVER_TIMEZONE), 'HH:mm', { 
-    timeZone: VANCOUVER_TIMEZONE 
+  const utcDate =
+    typeof utcDateTime === "string" ? new Date(utcDateTime) : utcDateTime;
+  return format(toZonedTime(utcDate, VANCOUVER_TIMEZONE), "HH:mm", {
+    timeZone: VANCOUVER_TIMEZONE,
   });
 };
 
@@ -64,9 +53,10 @@ export const formatPacificTime = (utcDateTime: string | Date): string => {
  * Format UTC datetime as Pacific Time (12-hour format: h:mm a)
  */
 export const formatPacificTime12 = (utcDateTime: string | Date): string => {
-  const utcDate = typeof utcDateTime === 'string' ? new Date(utcDateTime) : utcDateTime;
-  return format(toZonedTime(utcDate, VANCOUVER_TIMEZONE), 'h:mm a', { 
-    timeZone: VANCOUVER_TIMEZONE 
+  const utcDate =
+    typeof utcDateTime === "string" ? new Date(utcDateTime) : utcDateTime;
+  return format(toZonedTime(utcDate, VANCOUVER_TIMEZONE), "h:mm a", {
+    timeZone: VANCOUVER_TIMEZONE,
   });
 };
 
@@ -74,25 +64,34 @@ export const formatPacificTime12 = (utcDateTime: string | Date): string => {
  * Format UTC date as Pacific Time date (MMM d, yyyy format)
  */
 export const formatPacificDate = (utcDateTime: string | Date): string => {
-  const utcDate = typeof utcDateTime === 'string' ? new Date(utcDateTime) : utcDateTime;
-  return format(toZonedTime(utcDate, VANCOUVER_TIMEZONE), 'MMM d, yyyy', { 
-    timeZone: VANCOUVER_TIMEZONE 
+  const utcDate =
+    typeof utcDateTime === "string" ? new Date(utcDateTime) : utcDateTime;
+  return format(toZonedTime(utcDate, VANCOUVER_TIMEZONE), "MMM d, yyyy", {
+    timeZone: VANCOUVER_TIMEZONE,
   });
+};
+
+/**
+ * Convert Date object to Pacific Time Date string (YYYY-MM-DD format)
+ * Used for API requests
+ */
+export const formatPacificDateForAPI = (date: Date): string => {
+  return format(date, "yyyy-MM-dd", { timeZone: VANCOUVER_TIMEZONE });
 };
 
 /**
  * Format time range in Pacific Time (HH:mm - HH:mm format)
  */
 export const formatPacificTimeRange = (
-  startUTC: string | Date | null, 
+  startUTC: string | Date | null,
   endUTC: string | Date | null
 ): string => {
   if (!startUTC) return "-";
-  
+
   const startTime = formatPacificTime(startUTC);
-  
+
   if (!endUTC) return `${startTime} - Still Working`;
-  
+
   const endTime = formatPacificTime(endUTC);
   return `${startTime} - ${endTime}`;
 };
@@ -101,18 +100,18 @@ export const formatPacificTimeRange = (
  * Calculate duration between two UTC times
  */
 export const calculateDuration = (
-  startUTC: string | Date | null, 
+  startUTC: string | Date | null,
   endUTC: string | Date | null
 ): string => {
   if (!startUTC || !endUTC) return "-";
-  
-  const start = typeof startUTC === 'string' ? new Date(startUTC) : startUTC;
-  const end = typeof endUTC === 'string' ? new Date(endUTC) : endUTC;
-  
+
+  const start = typeof startUTC === "string" ? new Date(startUTC) : startUTC;
+  const end = typeof endUTC === "string" ? new Date(endUTC) : endUTC;
+
   const diff = end.getTime() - start.getTime();
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  
+
   return `${hours}h ${minutes}m`;
 };
 
@@ -120,6 +119,7 @@ export const calculateDuration = (
  * Format relative time (e.g., "2 hours ago", "3 minutes ago")
  */
 export const formatRelativeTime = (utcDateTime: string | Date): string => {
-  const utcDate = typeof utcDateTime === 'string' ? new Date(utcDateTime) : utcDateTime;
+  const utcDate =
+    typeof utcDateTime === "string" ? new Date(utcDateTime) : utcDateTime;
   return formatDistanceToNow(utcDate, { addSuffix: true });
 };

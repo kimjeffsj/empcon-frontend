@@ -172,23 +172,3 @@ export const formatScheduleDuration = (
   return `${hours}h ${minutes}m`;
 };
 
-// Format date for HTML input (Date/string → "2023-10-15")
-export const formatDateForInput = (date: string | Date): string => {
-  if (!date) return "";
-  const d = new Date(date);
-  return d.toISOString().split("T")[0];
-};
-
-// Format time for HTML input (Date/string → "14:30")
-export const formatTimeForInput = (date: string | Date): string => {
-  if (!date) return "";
-  const d = new Date(date);
-  return d.toTimeString().slice(0, 5);
-};
-
-// Combine date and time strings into ISO format
-export const combineDateAndTime = (date: string, time: string): string => {
-  if (!date || !time) return "";
-  const dateObj = new Date(`${date}T${time}`);
-  return dateObj.toISOString();
-};

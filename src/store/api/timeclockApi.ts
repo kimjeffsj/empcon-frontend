@@ -28,6 +28,8 @@ export const timeclockApi = baseApi.injectEndpoints({
         "TimeEntry",
         { type: "TimeEntry", id: "STATUS" },
         { type: "TimeEntry", id: "TODAY_STATUS" },
+        { type: "TimeEntry", id: "TODAY" },
+        { type: "TimeEntry", id: "LIST" },
       ],
     }),
 
@@ -44,6 +46,8 @@ export const timeclockApi = baseApi.injectEndpoints({
         "TimeEntry",
         { type: "TimeEntry", id: "STATUS" },
         { type: "TimeEntry", id: "TODAY_STATUS" },
+        { type: "TimeEntry", id: "TODAY" },
+        { type: "TimeEntry", id: "LIST" },
       ],
     }),
 
@@ -89,7 +93,7 @@ export const timeclockApi = baseApi.injectEndpoints({
         pagination: response.pagination,
       }),
       providesTags: (result, error, params) => {
-        const tags: any[] = ["TimeEntry"];
+        const tags: any[] = ["TimeEntry", { type: "TimeEntry", id: "LIST" }];
         if (params.employeeId) {
           tags.push({ type: "TimeEntry", id: `EMPLOYEE_${params.employeeId}` });
         }
@@ -118,21 +122,31 @@ export const timeclockApi = baseApi.injectEndpoints({
       ],
     }),
 
-
     // Utility: Get Employee's Today Time Entries
     getEmployeeTodayTimeEntries: builder.query<
       GetTimeEntriesResponse,
       { employeeId: string; date?: string }
     >({
-      query: ({ employeeId, date }) => ({
-        url: "/timeclock/entries",
-        params: {
-          employeeId,
-          startDate: date || new Date().toISOString().split("T")[0],
-          endDate: date || new Date().toISOString().split("T")[0],
-          limit: 10,
-        },
-      }),
+      query: ({ employeeId, date }) => {
+        const baseDate = date || new Date().toISOString().split("T")[0];
+        const base = new Date(baseDate);
+
+        const startDate = new Date(base);
+        startDate.setDate(base.getDate() - 1); // 하루 전
+
+        const endDate = new Date(base);
+        endDate.setDate(base.getDate() + 1); // 하루 후
+
+        return {
+          url: "/timeclock/entries",
+          params: {
+            employeeId,
+            startDate: startDate.toISOString().split("T")[0],
+            endDate: endDate.toISOString().split("T")[0],
+            limit: 50,
+          },
+        };
+      },
       transformResponse: (response: {
         success: boolean;
         data: TimeEntry[];
@@ -171,6 +185,28 @@ export const timeclockApi = baseApi.injectEndpoints({
       providesTags: (result, error, { employeeId }) => [
         { type: "TimeEntry", id: `EMPLOYEE_RANGE_${employeeId}` },
       ],
+    }),
+
+    // Today-specific API: Get today's time entries for dashboard (following Schedule API pattern)
+    getTodayTimeEntries: builder.query<GetTimeEntriesResponse, void>({
+      query: () => ({
+        url: "/timeclock/today-entries",
+      }),
+      transformResponse: (response: {
+        success: boolean;
+        data: TimeEntry[];
+        pagination: any;
+      }) => ({
+        data: response.data,
+        pagination: response.pagination,
+      }),
+      providesTags: [
+        "TimeEntry",
+        { type: "TimeEntry", id: "TODAY" },
+        { type: "TimeEntry", id: "LIST" },
+      ],
+      // Shorter cache for real-time today status (2 minutes)
+      keepUnusedDataFor: 2 * 60,
     }),
 
     // Development/Testing Endpoints (if needed)
@@ -228,6 +264,7 @@ export const {
   useLazyGetTimeEntriesQuery,
   useGetEmployeeTodayTimeEntriesQuery,
   useGetEmployeeTimeEntriesByRangeQuery,
+  useGetTodayTimeEntriesQuery,
 
   // Admin Operations
   useAdjustTimeEntryMutation,

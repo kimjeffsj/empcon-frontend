@@ -20,6 +20,7 @@ import {
   useUpdateScheduleMutation,
   useDeleteScheduleMutation,
 } from "@/store/api/schedulesApi";
+import { formatPacificDateForAPI } from "@/shared/utils/dateTime";
 
 type ViewMode = "list" | "calendar";
 
@@ -73,8 +74,10 @@ export const ScheduleList = ({
       switch (dateRangeFilter) {
         case "today":
           start = new Date(now);
+          start.setDate(now.getDate() - 1);
           start.setHours(0, 0, 0, 0);
           end = new Date(now);
+          end.setDate(now.getDate() + 1);
           end.setHours(23, 59, 59, 999);
           break;
         case "week":
@@ -97,15 +100,17 @@ export const ScheduleList = ({
         default:
           // Default to today
           start = new Date(now);
+          start.setDate(now.getDate() - 1);
           start.setHours(0, 0, 0, 0);
           end = new Date(now);
+          end.setDate(now.getDate() + 1);
           end.setHours(23, 59, 59, 999);
       }
     }
 
     return {
-      startDate: start.toISOString().split("T")[0],
-      endDate: end.toISOString().split("T")[0],
+      startDate: formatPacificDateForAPI(start),
+      endDate: formatPacificDateForAPI(end),
     };
   }, [viewMode, dateRangeFilter]);
 
@@ -138,11 +143,21 @@ export const ScheduleList = ({
     }
   }, [viewMode, refetch]);
 
-  // Filter schedules by search term (employee name)
+  // Today filter
   const filteredSchedules = useMemo(() => {
-    if (!searchTerm) return schedules;
+    let filtered = schedules;
 
-    return schedules.filter((schedule) => {
+    if (viewMode === "list" && dateRangeFilter === "today") {
+      const todayDateString = new Date().toDateString();
+      filtered = schedules.filter((schedule) => {
+        const scheduleDate = new Date(schedule.startTime).toDateString();
+        return scheduleDate === todayDateString;
+      });
+    }
+
+    if (!searchTerm) return filtered;
+
+    return filtered.filter((schedule) => {
       const employeeName = schedule.employee
         ? `${schedule.employee.firstName} ${schedule.employee.lastName}`.toLowerCase()
         : "";
@@ -151,13 +166,14 @@ export const ScheduleList = ({
       const position = schedule.position?.toLowerCase() || "";
 
       const searchLower = searchTerm.toLowerCase();
+
       return (
         employeeName.includes(searchLower) ||
         employeeNumber.includes(searchLower) ||
         position.includes(searchLower)
       );
     });
-  }, [schedules, searchTerm]);
+  }, [schedules, searchTerm, viewMode, dateRangeFilter]);
 
   // Calculate statistics for card view
   const scheduleStats = useMemo(() => {

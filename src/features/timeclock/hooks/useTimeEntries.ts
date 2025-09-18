@@ -49,11 +49,26 @@ export function useTimeEntries(options: UseTimeEntriesOptions = {}) {
     allowManualAdjustments: config.allowManualAdjustments && canAdjustTimes,
   };
 
-  // Build query parameters
+  // Build query parameters with timezone-safe date range handling
   const queryParams: Partial<GetTimeEntriesParams> = {
     ...options.defaultFilters,
     limit: config.itemsPerPage,
   };
+
+  // Expand date range for timezone safety (following ClockStatusDashboard pattern)
+  if (queryParams.startDate && queryParams.endDate) {
+    const startBase = new Date(queryParams.startDate);
+    const endBase = new Date(queryParams.endDate);
+
+    // Expand range by ±1 day for timezone boundary safety
+    const expandedStart = new Date(startBase);
+    expandedStart.setDate(startBase.getDate() - 1);
+    const expandedEnd = new Date(endBase);
+    expandedEnd.setDate(endBase.getDate() + 1);
+
+    queryParams.startDate = expandedStart.toISOString().split("T")[0];
+    queryParams.endDate = expandedEnd.toISOString().split("T")[0];
+  }
 
   // If not admin/manager, only show own entries
   if (!canAdjustTimes) {
@@ -89,12 +104,29 @@ export function useTimeEntries(options: UseTimeEntriesOptions = {}) {
     },
   ] = useAdjustTimeEntryMutation();
 
-  // Transform time entries for display
+  // Transform time entries for display with timezone-safe date filtering
   const displayEntries: TimeEntryDisplay[] = useMemo(() => {
     if (!timeEntriesData?.data) return [];
 
-    return timeEntriesData.data.map((entry) => transformTimeEntryForDisplay(entry));
-  }, [timeEntriesData]);
+    let filteredData = timeEntriesData.data;
+
+    // If we expanded date range, filter back to original requested range
+    if (options.defaultFilters?.startDate && options.defaultFilters?.endDate) {
+      const originalStartDate = new Date(options.defaultFilters.startDate).toDateString();
+      const originalEndDate = new Date(options.defaultFilters.endDate).toDateString();
+
+      filteredData = timeEntriesData.data.filter((entry) => {
+        const entryDate = new Date(entry.clockInTime).toDateString();
+        const entryDateObj = new Date(entryDate);
+        const startDateObj = new Date(originalStartDate);
+        const endDateObj = new Date(originalEndDate);
+
+        return entryDateObj >= startDateObj && entryDateObj <= endDateObj;
+      });
+    }
+
+    return filteredData.map((entry) => transformTimeEntryForDisplay(entry));
+  }, [timeEntriesData, options.defaultFilters]);
 
   // Today's entries for display
   const todayDisplayEntries: TimeEntryDisplay[] = useMemo(() => {

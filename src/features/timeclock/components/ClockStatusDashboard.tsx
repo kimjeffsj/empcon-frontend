@@ -13,24 +13,21 @@ import {
   AlertTriangle,
   CheckCircle2,
 } from "lucide-react";
-import { useGetTimeEntriesQuery } from "@/store/api/timeclockApi";
+import { useGetTodayTimeEntriesQuery } from "@/store/api/timeclockApi";
 import {
   EmployeeClockSummary,
   EMPLOYEE_STATUS_COLORS,
 } from "../types/timeclock.types";
 import { formatPacificTime12 } from "@/shared/utils/dateTime";
 import { SearchFilter } from "@/shared/components/SearchFilter";
-import { getPacificToday } from "@/shared/utils/dateTime";
 
 interface ClockStatusDashboardProps {
-  date?: string;
   showDetailedView?: boolean;
   autoRefresh?: boolean;
   className?: string;
 }
 
 export function ClockStatusDashboard({
-  date,
   showDetailedView = true,
   autoRefresh = true,
   className = "",
@@ -38,56 +35,71 @@ export function ClockStatusDashboard({
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
-  // Always use Pacific Time "today" for consistent results
-  const pacificToday = getPacificToday();
-  const targetDate = date || pacificToday;
-  
-  // API Query with polling for real-time updates
+  // Use new today-specific API that handles timezone automatically on backend
   const {
     data: timeEntriesData,
     isLoading,
     error,
     refetch,
-  } = useGetTimeEntriesQuery({
-    startDate: targetDate,
-    endDate: targetDate,
-    limit: 1000, // Get all entries for today
-  }, {
-    pollingInterval: autoRefresh ? 60000 : undefined, // 1 minute
+  } = useGetTodayTimeEntriesQuery(undefined, {
+    pollingInterval: autoRefresh ? 30000 : undefined, // 30 seconds for faster real-time updates
   });
+
+  // No need for client-side filtering - backend already returns today's entries
+  const todayFilteredEntries = useMemo(() => {
+    return timeEntriesData?.data || [];
+  }, [timeEntriesData]);
 
   // Transform TimeEntries data for display
   const employeeSummaries: EmployeeClockSummary[] = useMemo(() => {
-    if (!timeEntriesData?.data || timeEntriesData.data.length === 0) return [];
+    if (!todayFilteredEntries || todayFilteredEntries.length === 0) return [];
 
     // Group time entries by employee
-    const entriesByEmployee = timeEntriesData.data.reduce((acc, entry) => {
+    const entriesByEmployee = todayFilteredEntries.reduce((acc, entry) => {
       const employeeId = entry.employeeId;
       if (!acc[employeeId]) {
         acc[employeeId] = [];
       }
       acc[employeeId].push(entry);
       return acc;
-    }, {} as Record<string, typeof timeEntriesData.data>);
+    }, {} as Record<string, typeof todayFilteredEntries>);
 
     // Transform each employee's data
     return Object.entries(entriesByEmployee).map(([employeeId, entries]) => {
       // Get employee info from first entry (all entries have same employee info)
       const firstEntry = entries[0];
       const employee = firstEntry.employee;
-      
+
       // Calculate worked hours
-      const completedEntries = entries.filter(entry => entry.status === "CLOCKED_OUT");
-      const workedHours = completedEntries.reduce((sum, entry) => sum + (entry.totalHours || 0), 0);
-      
+      const completedEntries = entries.filter(
+        (entry) => entry.status === "CLOCKED_OUT"
+      );
+      const workedHours = completedEntries.reduce(
+        (sum, entry) => sum + (entry.totalHours || 0),
+        0
+      );
+
       // Find current clocked-in entry
-      const currentEntry = entries.find(entry => entry.status === "CLOCKED_IN");
-      
+      const currentEntry = entries.find(
+        (entry) => entry.status === "CLOCKED_IN"
+      );
+
       // Calculate basic statistics
       const isCurrentlyClocked = !!currentEntry;
       const completedShifts = completedEntries.length;
       const isOvertime = workedHours > 8;
-      
+
+      // Calculate total scheduled hours from all schedule entries
+      const scheduledHours = entries.reduce((total, entry) => {
+        if (entry.schedule?.startTime && entry.schedule?.endTime) {
+          const start = new Date(entry.schedule.startTime);
+          const end = new Date(entry.schedule.endTime);
+          const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+          return total + hours;
+        }
+        return total;
+      }, 0);
+
       // Determine status
       let status: EmployeeClockSummary["currentStatus"];
       if (isCurrentlyClocked) {
@@ -100,7 +112,9 @@ export function ClockStatusDashboard({
 
       return {
         employeeId,
-        employeeName: `${employee?.firstName || ""} ${employee?.lastName || ""}`.trim() || "Unknown",
+        employeeName:
+          `${employee?.firstName || ""} ${employee?.lastName || ""}`.trim() ||
+          "Unknown",
         employeeNumber: employee?.employeeNumber,
         currentStatus: status,
         statusColor: EMPLOYEE_STATUS_COLORS[status],
@@ -109,7 +123,7 @@ export function ClockStatusDashboard({
         todaySchedules: entries.length, // Count of shifts scheduled
         completedShifts,
         workedHours: Number(workedHours.toFixed(2)),
-        scheduledHours: 8, // Default, could be calculated from schedule data
+        scheduledHours: Number(scheduledHours.toFixed(2)), // Calculated from actual schedule data
         isLate: false, // TODO: Calculate based on schedule
         isOvertime,
       };
@@ -332,8 +346,8 @@ export function ClockStatusDashboard({
                   { value: "OVERTIME", label: "Overtime" },
                 ],
                 placeholder: "Filter by status",
-                width: "w-[150px]"
-              }
+                width: "w-[150px]",
+              },
             ]}
           />
         </CardHeader>
@@ -369,9 +383,7 @@ interface EmployeeStatusCardProps {
   showDetailed: boolean;
 }
 
-function EmployeeStatusCard({
-  employee,
-}: EmployeeStatusCardProps) {
+function EmployeeStatusCard({ employee }: EmployeeStatusCardProps) {
   return (
     <Card
       className="border-l-4"
@@ -406,8 +418,7 @@ function EmployeeStatusCard({
           {employee.clockedIn && employee.lastClockInTime && (
             <div className="text-xs text-gray-600 dark:text-gray-400">
               <p>
-                Clocked in at{" "}
-                {formatPacificTime12(employee.lastClockInTime)}
+                Clocked in at {formatPacificTime12(employee.lastClockInTime)}
               </p>
             </div>
           )}

@@ -237,21 +237,43 @@ export function useClockStatus(options: UseClockStatusOptions = {}) {
     }
   };
 
+  // Calculate enhanced summary with scheduledHours (following ClockStatusDashboard pattern)
+  const enhancedTodaySummary = useMemo(() => {
+    const baseSummary = clockStatusUIState.data?.summary;
+    const schedules = clockStatusUIState.data?.todaySchedules;
+
+    if (!baseSummary || !schedules) return null;
+
+    // Calculate total scheduled hours from schedule data
+    const scheduledHours = schedules.reduce((total, schedule) => {
+      const start = new Date(schedule.startTime);
+      const end = new Date(schedule.endTime);
+      const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+      return total + hours;
+    }, 0);
+
+    return {
+      ...baseSummary,
+      totalHoursWorked: baseSummary.hoursWorkedToday, // 필드명 통일
+      scheduledHours: Number(scheduledHours.toFixed(2)), // 계산된 스케줄 시간
+    };
+  }, [clockStatusUIState.data]);
+
   return {
     // State
     clockStatus: clockStatusUIState,
     buttonConfig: clockButtonConfig,
-    
+
     // Data
-    todaySummary: clockStatusUIState.data?.summary || null,
+    todaySummary: enhancedTodaySummary,
     todaySchedules: clockStatusUIState.data?.todaySchedules || [],
     currentTimeEntry: clockStatusUIState.data?.currentTimeEntry || null,
-    
+
     // Operations
     handleClockIn,
     handleClockOut,
     refetch,
-    
+
     // Loading states
     isLoading: clockStatusUIState.isLoading,
     isClockingIn,

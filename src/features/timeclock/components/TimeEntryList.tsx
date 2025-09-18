@@ -14,7 +14,6 @@ import {
 import { Skeleton } from "@/shared/ui/skeleton";
 import { Calendar, Clock, Edit, Trash2, MapPin } from "lucide-react";
 import { useTimeEntries } from "../hooks/useTimeEntries";
-import { TIME_ENTRY_STATUS_COLORS } from "../types/timeclock.types";
 import { TimeEntry } from "@empcon/types";
 import { TimeAdjustmentModal } from "./TimeAdjustmentModal";
 import {
