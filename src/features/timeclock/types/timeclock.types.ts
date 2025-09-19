@@ -2,7 +2,11 @@ import { TimeEntryStatus, ClockStatusResponse } from "@empcon/types";
 import { LucideIcon } from "lucide-react";
 
 // UI State Types
-export type ClockButtonState = "clock-in" | "clock-out" | "disabled" | "loading";
+export type ClockButtonState =
+  | "clock-in"
+  | "clock-out"
+  | "disabled"
+  | "loading";
 
 export interface ClockButtonConfig {
   state: ClockButtonState;
@@ -73,23 +77,6 @@ export interface TimeEntryListConfig {
   enableSearch: boolean;
 }
 
-// Dashboard Types (Admin)
-export interface EmployeeClockSummary {
-  employeeId: string;
-  employeeName: string;
-  employeeNumber?: string;
-  currentStatus: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED" | "LATE" | "OVERTIME";
-  statusColor: "green" | "red" | "yellow" | "blue" | "gray" | "orange";
-  clockedIn: boolean;
-  lastClockInTime?: string;
-  todaySchedules: number;
-  completedShifts: number;
-  workedHours: number;
-  scheduledHours: number;
-  isLate: boolean;
-  isOvertime: boolean;
-}
-
 // Modal/Dialog Types
 export interface TimeAdjustmentModalData {
   timeEntryId: string;
@@ -127,28 +114,3 @@ export interface ClockNotification {
   actionLabel?: string;
   onAction?: () => void;
 }
-
-
-// Constants for UI
-export const CLOCK_STATUS_COLORS = {
-  NOT_CLOCKED: "gray",
-  CLOCKED_IN: "green", 
-  ON_BREAK: "yellow",
-  CLOCKED_OUT: "blue",
-  LATE: "red",
-  OVERTIME: "orange",
-} as const;
-
-export const TIME_ENTRY_STATUS_COLORS = {
-  CLOCKED_IN: "green",
-  CLOCKED_OUT: "blue", 
-  ADJUSTED: "yellow",
-} as const;
-
-export const EMPLOYEE_STATUS_COLORS = {
-  NOT_STARTED: "gray",
-  IN_PROGRESS: "green",
-  COMPLETED: "blue",
-  LATE: "red", 
-  OVERTIME: "orange",
-} as const;

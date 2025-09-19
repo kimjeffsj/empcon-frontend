@@ -2,16 +2,16 @@ import { useMemo } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import {
-  useGetClockStatusQuery,
+  useGetTimeEntriesQuery,
   useClockInMutation,
   useClockOutMutation,
 } from "@/store/api/timeclockApi";
+import { useGetEmployeeSchedulesQuery } from "@/store/api/schedulesApi";
 import {
   ClockStatusUIState,
   ClockButtonConfig,
   ClockButtonState,
   ClockNotification,
-  CLOCK_STATUS_COLORS,
 } from "../types/timeclock.types";
 import { LogIn, LogOut, Clock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -26,40 +26,108 @@ interface UseClockStatusOptions {
 export function useClockStatus(options: UseClockStatusOptions = {}) {
   const { user } = useSelector((state: RootState) => state.auth);
   const employeeId = options.employeeId || user?.id || "";
-  
-  // API Queries
+
+  // ✅ Schedule-based API approach (same as Admin page)
+  const today = options.date || new Date().toISOString().split('T')[0];
+
+  // 1. Get employee's today schedules
   const {
-    data: clockStatusData,
-    isLoading,
-    error,
-    refetch,
-  } = useGetClockStatusQuery(
+    data: schedulesData,
+    isLoading: schedulesLoading,
+    error: schedulesError,
+    refetch: refetchSchedules,
+  } = useGetEmployeeSchedulesQuery(
     {
       employeeId,
-      date: options.date,
+      startDate: today,
+      endDate: today,
     },
     {
       skip: !employeeId,
-      pollingInterval: options.autoRefresh ? (options.refetchInterval || 30000) : undefined, // 30 seconds default
+      pollingInterval: options.autoRefresh ? options.refetchInterval || 30000 : undefined,
     }
   );
 
-  // Mutations
-  const [
-    clockIn,
+  // 2. Get employee's today time entries
+  const {
+    data: timeEntriesData,
+    isLoading: entriesLoading,
+    error: entriesError,
+    refetch: refetchEntries,
+  } = useGetTimeEntriesQuery(
     {
-      isLoading: isClockingIn,
-      error: clockInError,
+      employeeId,
+      startDate: today,
+      endDate: today,
+      limit: 50,
     },
-  ] = useClockInMutation();
+    {
+      skip: !employeeId,
+      pollingInterval: options.autoRefresh ? options.refetchInterval || 30000 : undefined,
+    }
+  );
 
-  const [
-    clockOut,
-    {
-      isLoading: isClockingOut,
-      error: clockOutError,
-    },
-  ] = useClockOutMutation();
+  const isLoading = schedulesLoading || entriesLoading;
+  const error = schedulesError || entriesError;
+
+  const refetch = () => {
+    refetchSchedules();
+    refetchEntries();
+  };
+
+  // ✅ Transform combined data to match original ClockStatusResponse structure
+  const clockStatusData = useMemo(() => {
+    if (!schedulesData?.data || !timeEntriesData?.data) return null;
+
+    const schedules = schedulesData.data;
+    const timeEntries = timeEntriesData.data;
+
+    // Find current active time entry
+    const currentTimeEntry = timeEntries.find(
+      entry => entry.status === "CLOCKED_IN"
+    );
+
+    // Transform schedules to include TimeEntry information
+    const todaySchedules = schedules.map(schedule => {
+      const relatedEntry = timeEntries.find(entry => entry.scheduleId === schedule.id);
+
+      return {
+        id: schedule.id,
+        startTime: schedule.startTime,
+        endTime: schedule.endTime,
+        position: schedule.position,
+        status: relatedEntry?.status || "SCHEDULED", // Add required status field
+        canClockIn: !relatedEntry && !currentTimeEntry, // Can clock in if no entry exists and not currently clocked in
+        timeEntryId: relatedEntry?.id,
+      };
+    });
+
+    // Calculate summary
+    const completedEntries = timeEntries.filter(entry => entry.status === "CLOCKED_OUT");
+    const hoursWorkedToday = completedEntries.reduce((sum, entry) => sum + (entry.totalHours || 0), 0);
+
+    const summary = {
+      date: today, // Add required date field
+      totalSchedules: schedules.length, // Add required totalSchedules field
+      completedShifts: completedEntries.length,
+      hoursWorkedToday: Number(hoursWorkedToday.toFixed(2)),
+    };
+
+    return {
+      employeeId, // Add required employeeId field
+      isClocked: !!currentTimeEntry, // Add required isClocked field
+      currentTimeEntry,
+      todaySchedules,
+      summary,
+    };
+  }, [schedulesData, timeEntriesData]);
+
+  // Mutations
+  const [clockIn, { isLoading: isClockingIn, error: clockInError }] =
+    useClockInMutation();
+
+  const [clockOut, { isLoading: isClockingOut, error: clockOutError }] =
+    useClockOutMutation();
 
   // Computed State
   const clockStatusUIState: ClockStatusUIState = useMemo(() => {
@@ -80,7 +148,7 @@ export function useClockStatus(options: UseClockStatusOptions = {}) {
 
     // Find active time entry
     const activeTimeEntry = clockStatusData.currentTimeEntry;
-    
+
     // Find next available schedule for clock-in
     const availableSchedule = clockStatusData.todaySchedules.find(
       (schedule) => schedule.canClockIn && !schedule.timeEntryId
@@ -92,7 +160,9 @@ export function useClockStatus(options: UseClockStatusOptions = {}) {
           id: availableSchedule.id,
           startTime: availableSchedule.startTime,
           position: availableSchedule.position || "Unknown Position",
-          timeUntilClockIn: calculateMinutesUntilClockIn(availableSchedule.startTime),
+          timeUntilClockIn: calculateMinutesUntilClockIn(
+            availableSchedule.startTime
+          ),
         }
       : null;
 
@@ -105,7 +175,15 @@ export function useClockStatus(options: UseClockStatusOptions = {}) {
       activeTimeEntryId: activeTimeEntry?.id || null,
       nextSchedule,
     };
-  }, [clockStatusData, isLoading, isClockingIn, isClockingOut, error, clockInError, clockOutError]);
+  }, [
+    clockStatusData,
+    isLoading,
+    isClockingIn,
+    isClockingOut,
+    error,
+    clockInError,
+    clockOutError,
+  ]);
 
   // Clock Button Configuration
   const clockButtonConfig: ClockButtonConfig = useMemo(() => {
@@ -152,7 +230,7 @@ export function useClockStatus(options: UseClockStatusOptions = {}) {
     // No available actions
     return {
       state: "disabled" as ClockButtonState,
-      text: clockStatusUIState.nextSchedule 
+      text: clockStatusUIState.nextSchedule
         ? `Available in ${clockStatusUIState.nextSchedule.timeUntilClockIn}m`
         : "No Schedule Available",
       variant: "outline",
@@ -191,7 +269,7 @@ export function useClockStatus(options: UseClockStatusOptions = {}) {
       return true;
     } catch (error: any) {
       const errorMessage = error?.data?.error || "Failed to clock in";
-      
+
       toast.error("Clock In Failed", {
         description: errorMessage,
       });
@@ -201,7 +279,10 @@ export function useClockStatus(options: UseClockStatusOptions = {}) {
   };
 
   const handleClockOut = async (location?: string) => {
-    if (!clockStatusUIState.canClockOut || !clockStatusUIState.activeTimeEntryId) {
+    if (
+      !clockStatusUIState.canClockOut ||
+      !clockStatusUIState.activeTimeEntryId
+    ) {
       toast.error("Cannot clock out at this time");
       return false;
     }
@@ -228,7 +309,7 @@ export function useClockStatus(options: UseClockStatusOptions = {}) {
       return true;
     } catch (error: any) {
       const errorMessage = error?.data?.error || "Failed to clock out";
-      
+
       toast.error("Clock Out Failed", {
         description: errorMessage,
       });
@@ -285,12 +366,12 @@ export function useClockStatus(options: UseClockStatusOptions = {}) {
 function calculateMinutesUntilClockIn(scheduledStartTime: string): number {
   const now = new Date();
   const scheduleStart = new Date(scheduledStartTime);
-  
+
   // Clock-in allowed 5 minutes before scheduled time
   const clockInTime = new Date(scheduleStart.getTime() - 5 * 60 * 1000);
-  
+
   const diffMs = clockInTime.getTime() - now.getTime();
   const diffMinutes = Math.ceil(diffMs / (1000 * 60));
-  
+
   return Math.max(0, diffMinutes);
 }

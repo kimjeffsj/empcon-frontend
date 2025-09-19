@@ -325,19 +325,19 @@ export const ScheduleForm = ({
           {/* Date and Time Inputs */}
           <Card>
             <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Date */}
                 <div className="space-y-2">
                   <Label htmlFor="date">Date *</Label>
                   <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    {/* <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" /> */}
                     <Input
                       id="date"
                       type="date"
                       value={selectedDate}
                       onChange={(e) => setSelectedDate(e.target.value)}
                       onBlur={handleTimeBlur}
-                      className="pl-10"
+                      className="px-2"
                       required
                     />
                   </div>
@@ -347,14 +347,14 @@ export const ScheduleForm = ({
                 <div className="space-y-2">
                   <Label htmlFor="startTime">Start Time *</Label>
                   <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    {/* <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" /> */}
                     <Input
                       id="startTime"
                       type="time"
                       value={startTimeInput}
                       onChange={(e) => setStartTimeInput(e.target.value)}
                       onBlur={handleTimeBlur}
-                      className="pl-10"
+                      className="px-2"
                       required
                     />
                   </div>
@@ -364,14 +364,14 @@ export const ScheduleForm = ({
                 <div className="space-y-2">
                   <Label htmlFor="endTime">End Time *</Label>
                   <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    {/* <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" /> */}
                     <Input
                       id="endTime"
                       type="time"
                       value={endTimeInput}
                       onChange={(e) => setEndTimeInput(e.target.value)}
                       onBlur={handleTimeBlur}
-                      className="pl-10"
+                      className="px-2"
                       required
                     />
                   </div>

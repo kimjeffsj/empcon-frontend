@@ -3,7 +3,6 @@
 import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
-import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { StatsCard } from "@/shared/components/StatsCard";
 import {
@@ -13,13 +12,11 @@ import {
   AlertTriangle,
   CheckCircle2,
 } from "lucide-react";
-import { useGetTodayTimeEntriesQuery } from "@/store/api/timeclockApi";
-import {
-  EmployeeClockSummary,
-  EMPLOYEE_STATUS_COLORS,
-} from "../types/timeclock.types";
-import { formatPacificTime12 } from "@/shared/utils/dateTime";
+import { useGetTimeEntriesQuery } from "@/store/api/timeclockApi";
+import { useGetTodayRosterQuery } from "@/store/api/schedulesApi";
 import { SearchFilter } from "@/shared/components/SearchFilter";
+import { EmployeeStatusCard } from "./EmployeeStatusCard";
+import { EMPLOYEE_STATUS_COLORS, EmployeeClockSummary } from "@empcon/types";
 
 interface ClockStatusDashboardProps {
   showDetailedView?: boolean;
@@ -35,70 +32,79 @@ export function ClockStatusDashboard({
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
-  // Use new today-specific API that handles timezone automatically on backend
+  // ✅ Option A: Combine Schedule + TimeEntry APIs
+  // 1. Get all today's scheduled employees
   const {
-    data: timeEntriesData,
-    isLoading,
-    error,
-    refetch,
-  } = useGetTodayTimeEntriesQuery(undefined, {
-    pollingInterval: autoRefresh ? 30000 : undefined, // 30 seconds for faster real-time updates
+    data: rosterData,
+    isLoading: rosterLoading,
+    error: rosterError,
+    refetch: refetchRoster,
+  } = useGetTodayRosterQuery(undefined, {
+    pollingInterval: autoRefresh ? 30000 : undefined,
   });
 
-  // No need for client-side filtering - backend already returns today's entries
-  const todayFilteredEntries = useMemo(() => {
-    return timeEntriesData?.data || [];
-  }, [timeEntriesData]);
+  // 2. Get all today's time entries
+  const today = new Date().toISOString().split('T')[0];
+  const {
+    data: timeEntriesData,
+    isLoading: entriesLoading,
+    error: entriesError,
+    refetch: refetchEntries,
+  } = useGetTimeEntriesQuery({
+    startDate: today,
+    endDate: today,
+    limit: 100,
+  }, {
+    pollingInterval: autoRefresh ? 30000 : undefined,
+  });
 
-  // Transform TimeEntries data for display
+  const isLoading = rosterLoading || entriesLoading;
+  const error = rosterError || entriesError;
+
+  const refetch = () => {
+    refetchRoster();
+    refetchEntries();
+  };
+
+  // ✅ Transform Schedule data for Live Status display
   const employeeSummaries: EmployeeClockSummary[] = useMemo(() => {
-    if (!todayFilteredEntries || todayFilteredEntries.length === 0) return [];
+    if (!rosterData?.schedules || !timeEntriesData?.data) return [];
 
-    // Group time entries by employee
-    const entriesByEmployee = todayFilteredEntries.reduce((acc, entry) => {
-      const employeeId = entry.employeeId;
-      if (!acc[employeeId]) {
-        acc[employeeId] = [];
-      }
-      acc[employeeId].push(entry);
-      return acc;
-    }, {} as Record<string, typeof todayFilteredEntries>);
+    // Helper function to calculate schedule hours
+    const calculateScheduleHours = (startTime: string, endTime: string): number => {
+      const start = new Date(startTime);
+      const end = new Date(endTime);
+      return (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+    };
 
-    // Transform each employee's data
-    return Object.entries(entriesByEmployee).map(([employeeId, entries]) => {
-      // Get employee info from first entry (all entries have same employee info)
-      const firstEntry = entries[0];
-      const employee = firstEntry.employee;
-
-      // Calculate worked hours
-      const completedEntries = entries.filter(
-        (entry) => entry.status === "CLOCKED_OUT"
-      );
-      const workedHours = completedEntries.reduce(
-        (sum, entry) => sum + (entry.totalHours || 0),
-        0
+    // Process each scheduled employee
+    return rosterData.schedules.map(schedule => {
+      // Find related time entries for this schedule
+      const relatedEntries = timeEntriesData.data.filter(
+        entry => entry.scheduleId === schedule.id
       );
 
       // Find current clocked-in entry
-      const currentEntry = entries.find(
-        (entry) => entry.status === "CLOCKED_IN"
+      const currentEntry = relatedEntries.find(
+        entry => entry.status === "CLOCKED_IN"
+      );
+
+      // Find completed entries
+      const completedEntries = relatedEntries.filter(
+        entry => entry.status === "CLOCKED_OUT"
+      );
+
+      // Calculate worked hours
+      const workedHours = completedEntries.reduce(
+        (sum, entry) => sum + (entry.totalHours || 0),
+        0
       );
 
       // Calculate basic statistics
       const isCurrentlyClocked = !!currentEntry;
       const completedShifts = completedEntries.length;
       const isOvertime = workedHours > 8;
-
-      // Calculate total scheduled hours from all schedule entries
-      const scheduledHours = entries.reduce((total, entry) => {
-        if (entry.schedule?.startTime && entry.schedule?.endTime) {
-          const start = new Date(entry.schedule.startTime);
-          const end = new Date(entry.schedule.endTime);
-          const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-          return total + hours;
-        }
-        return total;
-      }, 0);
+      const scheduledHours = calculateScheduleHours(schedule.startTime, schedule.endTime);
 
       // Determine status
       let status: EmployeeClockSummary["currentStatus"];
@@ -107,28 +113,33 @@ export function ClockStatusDashboard({
       } else if (completedShifts > 0) {
         status = isOvertime ? "OVERTIME" : "COMPLETED";
       } else {
-        status = "NOT_STARTED";
+        status = "NOT_STARTED"; // ⭐ Key: Shows employees who haven't clocked in yet
       }
 
       return {
-        employeeId,
-        employeeName:
-          `${employee?.firstName || ""} ${employee?.lastName || ""}`.trim() ||
-          "Unknown",
-        employeeNumber: employee?.employeeNumber,
+        employeeId: schedule.employee.id,
+        employeeName: `${schedule.employee.firstName} ${schedule.employee.lastName}`.trim(),
+        employeeNumber: schedule.employee.employeeNumber,
         currentStatus: status,
         statusColor: EMPLOYEE_STATUS_COLORS[status],
         clockedIn: isCurrentlyClocked,
         lastClockInTime: currentEntry?.clockInTime,
-        todaySchedules: entries.length, // Count of shifts scheduled
+        todaySchedules: 1, // One schedule per employee in this view
         completedShifts,
         workedHours: Number(workedHours.toFixed(2)),
-        scheduledHours: Number(scheduledHours.toFixed(2)), // Calculated from actual schedule data
-        isLate: false, // TODO: Calculate based on schedule
+        scheduledHours: Number(scheduledHours.toFixed(2)),
+        isLate: false, // TODO: Calculate based on schedule vs actual clock-in time
         isOvertime,
+
+        // ✅ UX improvement fields
+        scheduledStart: schedule.startTime,
+        scheduledEnd: schedule.endTime,
+        actualClockInTime: currentEntry?.clockInTime,
+        actualClockOutTime: completedEntries[0]?.clockOutTime,
+        gracePeriodApplied: currentEntry?.gracePeriodApplied,
       };
     });
-  }, [timeEntriesData]);
+  }, [rosterData, timeEntriesData]);
 
   // Apply filters
   const filteredEmployees = useMemo(() => {
@@ -374,85 +385,5 @@ export function ClockStatusDashboard({
         </CardContent>
       </Card>
     </div>
-  );
-}
-
-// Individual employee status card component
-interface EmployeeStatusCardProps {
-  employee: EmployeeClockSummary;
-  showDetailed: boolean;
-}
-
-function EmployeeStatusCard({ employee }: EmployeeStatusCardProps) {
-  return (
-    <Card
-      className="border-l-4"
-      style={{ borderLeftColor: employee.statusColor }}
-    >
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          {/* Employee Info */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-medium text-sm">{employee.employeeName}</h4>
-              {employee.employeeNumber && (
-                <p className="text-xs text-gray-500">
-                  #{employee.employeeNumber}
-                </p>
-              )}
-            </div>
-
-            <Badge
-              variant="outline"
-              className="text-xs"
-              style={{
-                color: employee.statusColor,
-                borderColor: employee.statusColor,
-              }}
-            >
-              {employee.currentStatus.replace("_", " ")}
-            </Badge>
-          </div>
-
-          {/* Status Details */}
-          {employee.clockedIn && employee.lastClockInTime && (
-            <div className="text-xs text-gray-600 dark:text-gray-400">
-              <p>
-                Clocked in at {formatPacificTime12(employee.lastClockInTime)}
-              </p>
-            </div>
-          )}
-
-          {/* Hours Summary */}
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div>
-              <p className="text-gray-500">Hours Today</p>
-              <p className="font-medium">{employee.workedHours}h</p>
-            </div>
-            <div>
-              <p className="text-gray-500">Scheduled</p>
-              <p className="font-medium">{employee.scheduledHours}h</p>
-            </div>
-          </div>
-
-          {/* Warnings */}
-          <div className="flex space-x-1">
-            {employee.isLate && (
-              <Badge variant="destructive" className="text-xs">
-                Late
-              </Badge>
-            )}
-            {employee.isOvertime && (
-              <Badge
-                variant="outline"
-                className="text-xs text-amber-600 border-amber-600"
-              >
-                OT
-              </Badge>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
   );
 }
