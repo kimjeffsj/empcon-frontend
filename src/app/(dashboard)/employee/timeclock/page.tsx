@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 
 import { DateRange } from "react-day-picker";
 import { Clock, History, TrendingUp } from "lucide-react";
+import { getPacificToday } from "@/shared/utils/dateTime";
 
 export default function EmployeeTimeclockPage() {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -24,26 +25,43 @@ export default function EmployeeTimeclockPage() {
   const [historySearchQuery, setHistorySearchQuery] = useState("");
   const [historyStatusFilter, setHistoryStatusFilter] = useState<string>("ALL");
 
-  // Calculate this week's date range
+  // Calculate this week's date range (Pacific Time based)
   const getThisWeekDateRange = () => {
-    const now = new Date();
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - now.getDay()); // Start of week (Sunday)
+    const todayPacific = getPacificToday(); // "2025-09-19"
+    const today = new Date(todayPacific + "T00:00:00"); // Avoid timezone conversion
+
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 6); // End of week (Saturday)
 
+    const formatDateForAPI = (date: Date): string => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
     return {
-      startDate: weekStart.toISOString().split("T")[0],
-      endDate: weekEnd.toISOString().split("T")[0],
+      startDate: formatDateForAPI(weekStart),
+      endDate: formatDateForAPI(weekEnd),
     };
   };
 
   // Calculate history date range from DateRangePicker
+  // Keep user-selected dates as-is, don't convert to UTC
   const getHistoryDateRange = () => {
     if (historyDateRange?.from && historyDateRange?.to) {
+      const formatDateForAPI = (date: Date): string => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
       return {
-        startDate: historyDateRange.from.toISOString().split("T")[0],
-        endDate: historyDateRange.to.toISOString().split("T")[0],
+        startDate: formatDateForAPI(historyDateRange.from),
+        endDate: formatDateForAPI(historyDateRange.to),
       };
     }
     return undefined;
@@ -154,15 +172,8 @@ export default function EmployeeTimeclockPage() {
                 <TimeEntryList
                   employeeId={user?.id}
                   dateRange={getHistoryDateRange()}
-                  config={{
-                    showEmployeeInfo: false,
-                    allowManualAdjustments: false,
-                    itemsPerPage: 20,
-                    enableSearch: false, // Search handled by external SearchFilter
-                    showAdjustments: true,
-                  }}
-                  showSummary={false}
-                  title=""
+                  showEmployeeInfo={false}
+                  allowManualAdjustments={false}
                   className="border-none shadow-none"
                 />
               </CardContent>
@@ -217,15 +228,8 @@ function ThisWeekTabContent({
           <TimeEntryList
             employeeId={employeeId}
             dateRange={dateRange}
-            config={{
-              showEmployeeInfo: false,
-              allowManualAdjustments: false,
-              itemsPerPage: 15,
-              enableSearch: false,
-              showAdjustments: true,
-            }}
-            showSummary={false} // Summary is now separate
-            title=""
+            showEmployeeInfo={false}
+            allowManualAdjustments={false}
             className="border-none shadow-none"
           />
         </CardContent>

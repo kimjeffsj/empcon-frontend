@@ -15,6 +15,7 @@ import { useGetTodayRosterQuery } from "@/store/api/schedulesApi";
 import { LoadingIndicator } from "@/shared/components/Loading";
 import { ScheduleStatusBadge } from "@/shared/components/ScheduleStatusBadge";
 import { formatScheduleTime } from "@/lib/formatter";
+import { filterByClientTimezoneToday } from "@/shared/utils/dateTime";
 
 interface TodayRosterProps {
   className?: string;
@@ -68,8 +69,10 @@ export const TodayRoster = ({ className }: TodayRosterProps) => {
     );
   }
 
-  const schedules = roster?.schedules || [];
-  const totalScheduled = roster?.totalScheduled || 0;
+  // Apply client timezone filtering (same as Schedule pages)
+  const allSchedules = roster?.schedules || [];
+  const schedules = filterByClientTimezoneToday(allSchedules);
+  const totalScheduled = schedules.length; // Use filtered count instead of backend count
   const currentlyWorking = schedules.filter((s) => s.isCurrentlyWorking).length;
 
   return (

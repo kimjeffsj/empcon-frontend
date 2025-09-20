@@ -17,6 +17,7 @@ import { useGetTodayRosterQuery } from "@/store/api/schedulesApi";
 import { SearchFilter } from "@/shared/components/SearchFilter";
 import { EmployeeStatusCard } from "./EmployeeStatusCard";
 import { EMPLOYEE_STATUS_COLORS, EmployeeClockSummary } from "@empcon/types";
+import { filterByClientTimezoneToday, getPacificToday } from "@/shared/utils/dateTime";
 
 interface ClockStatusDashboardProps {
   showDetailedView?: boolean;
@@ -43,8 +44,8 @@ export function ClockStatusDashboard({
     pollingInterval: autoRefresh ? 30000 : undefined,
   });
 
-  // 2. Get all today's time entries
-  const today = new Date().toISOString().split('T')[0];
+  // 2. Get all today's time entries (use Pacific Time "today")
+  const today = getPacificToday();
   const {
     data: timeEntriesData,
     isLoading: entriesLoading,
@@ -70,6 +71,9 @@ export function ClockStatusDashboard({
   const employeeSummaries: EmployeeClockSummary[] = useMemo(() => {
     if (!rosterData?.schedules || !timeEntriesData?.data) return [];
 
+    // Apply client timezone filtering (same as TodayRoster)
+    const todaySchedules = filterByClientTimezoneToday(rosterData.schedules);
+
     // Helper function to calculate schedule hours
     const calculateScheduleHours = (startTime: string, endTime: string): number => {
       const start = new Date(startTime);
@@ -77,8 +81,8 @@ export function ClockStatusDashboard({
       return (end.getTime() - start.getTime()) / (1000 * 60 * 60);
     };
 
-    // Process each scheduled employee
-    return rosterData.schedules.map(schedule => {
+    // Process each scheduled employee (filtered by client timezone)
+    return todaySchedules.map(schedule => {
       // Find related time entries for this schedule
       const relatedEntries = timeEntriesData.data.filter(
         entry => entry.scheduleId === schedule.id

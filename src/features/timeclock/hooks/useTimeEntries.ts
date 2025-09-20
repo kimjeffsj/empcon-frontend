@@ -94,32 +94,31 @@ export function useTimeEntries(options: UseTimeEntriesOptions = {}) {
   const [adjustTimeEntry, { isLoading: isAdjusting, error: adjustmentError }] =
     useAdjustTimeEntryMutation();
 
-  // Transform time entries for display with timezone-safe date filtering
+  // Transform time entries for display with schedule-based date filtering
   const displayEntries: TimeEntryDisplay[] = useMemo(() => {
     if (!timeEntriesData?.data) return [];
 
-    let filteredData = timeEntriesData.data;
+    let filteredEntries = timeEntriesData.data;
 
-    // If we expanded date range, filter back to original requested range
+    // ✅ Schedule time-based filtering (consistent with Live Status approach)
     if (options.defaultFilters?.startDate && options.defaultFilters?.endDate) {
-      const originalStartDate = new Date(
-        options.defaultFilters.startDate
-      ).toDateString();
-      const originalEndDate = new Date(
-        options.defaultFilters.endDate
-      ).toDateString();
+      const startDate = new Date(options.defaultFilters.startDate);
+      const endDate = new Date(options.defaultFilters.endDate);
 
-      filteredData = timeEntriesData.data.filter((entry) => {
-        const entryDate = new Date(entry.clockInTime).toDateString();
-        const entryDateObj = new Date(entryDate);
-        const startDateObj = new Date(originalStartDate);
-        const endDateObj = new Date(originalEndDate);
+      filteredEntries = filteredEntries.filter(entry => {
+        if (!entry.schedule?.startTime) return false;
 
-        return entryDateObj >= startDateObj && entryDateObj <= endDateObj;
+        // Compare schedule start time by date only (remove time component)
+        const scheduleDate = new Date(entry.schedule.startTime);
+        const scheduleDateOnly = new Date(scheduleDate.toDateString());
+        const startDateOnly = new Date(startDate.toDateString());
+        const endDateOnly = new Date(endDate.toDateString());
+
+        return scheduleDateOnly >= startDateOnly && scheduleDateOnly <= endDateOnly;
       });
     }
 
-    return filteredData.map((entry) => transformTimeEntryForDisplay(entry));
+    return filteredEntries.map(entry => transformTimeEntryForDisplay(entry));
   }, [timeEntriesData, options.defaultFilters]);
 
   // Today's entries for display
@@ -193,8 +192,10 @@ export function useTimeEntries(options: UseTimeEntriesOptions = {}) {
       });
 
       return true;
-    } catch (error: any) {
-      const errorMessage = error?.data?.error || "Failed to adjust time entry";
+    } catch (error: unknown) {
+      const errorMessage =
+        (error as { data?: { error?: string } })?.data?.error ||
+        "Failed to adjust time entry";
 
       toast.error("Adjustment Failed", {
         description: errorMessage,
@@ -306,5 +307,13 @@ function transformTimeEntryForDisplay(entry: TimeEntry): TimeEntryDisplay {
     gracePeriodApplied: entry.gracePeriodApplied,
     isEarlyClockOut,
     isOvertime,
+    employee: entry.employee ? {
+      firstName: entry.employee.firstName,
+      lastName: entry.employee.lastName,
+      employeeNumber: entry.employee.employeeNumber,
+    } : undefined,
+    schedule: entry.schedule ? {
+      position: entry.schedule.position,
+    } : undefined,
   };
 }

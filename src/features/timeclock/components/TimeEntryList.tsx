@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
 import {
@@ -16,11 +16,6 @@ import { Calendar, Clock, Edit, Trash2, MapPin } from "lucide-react";
 import { useTimeEntries } from "../hooks/useTimeEntries";
 import { TimeEntry } from "@empcon/types";
 import { TimeAdjustmentModal } from "./TimeAdjustmentModal";
-import {
-  formatPacificTimeRange,
-  formatPacificDate,
-  calculateDuration,
-} from "@/shared/utils/dateTime";
 
 interface TimeEntryListProps {
   employeeId?: string;
@@ -28,17 +23,32 @@ interface TimeEntryListProps {
     startDate: string;
     endDate: string;
   };
+  searchQuery?: string;
+  statusFilter?: string;
   className?: string;
   showEmployeeInfo?: boolean;
   allowManualAdjustments?: boolean;
+  onSummaryLoad?: (
+    summary: {
+      totalEntries: number;
+      completedShifts: number;
+      totalHours: number;
+      averageHours: number;
+      overtimeHours: number;
+    },
+    isLoading: boolean
+  ) => void;
 }
 
 export function TimeEntryList({
   employeeId,
   dateRange,
+  searchQuery = "",
+  statusFilter = "ALL",
   className = "",
   showEmployeeInfo = false,
   allowManualAdjustments = false,
+  onSummaryLoad,
 }: TimeEntryListProps) {
   const [adjustmentModal, setAdjustmentModal] = useState<{
     isOpen: boolean;
@@ -48,18 +58,50 @@ export function TimeEntryList({
     timeEntry: null,
   });
 
-  const { rawEntries, isLoading, error, refetch } = useTimeEntries({
-    employeeId,
-    config: {
-      showEmployeeInfo,
-      allowManualAdjustments,
-      itemsPerPage: 100,
-      enableSearch: false,
-    },
-    defaultFilters: {
-      ...dateRange,
-    },
-  });
+  const { entries, rawEntries, summary, isLoading, error, refetch } =
+    useTimeEntries({
+      employeeId,
+      config: {
+        showEmployeeInfo,
+        allowManualAdjustments,
+        itemsPerPage: 100,
+        enableSearch: false,
+      },
+      defaultFilters: {
+        ...dateRange,
+      },
+    });
+
+  // Client-side filtering
+  const filteredEntries = useMemo(() => {
+    let filtered = entries;
+
+    // Status filter
+    if (statusFilter && statusFilter !== "ALL") {
+      filtered = filtered.filter(entry => entry.status === statusFilter);
+    }
+
+    // Search filter
+    if (searchQuery && searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(entry =>
+        entry.employee?.firstName?.toLowerCase().includes(query) ||
+        entry.employee?.lastName?.toLowerCase().includes(query) ||
+        entry.employee?.employeeNumber?.includes(query) ||
+        entry.schedulePosition?.toLowerCase().includes(query) ||
+        entry.date.includes(query)
+      );
+    }
+
+    return filtered;
+  }, [entries, statusFilter, searchQuery]);
+
+  // Pass summary data to parent component
+  useEffect(() => {
+    if (onSummaryLoad) {
+      onSummaryLoad(summary, isLoading);
+    }
+  }, [summary, isLoading]); // Remove onSummaryLoad from deps to prevent infinite loop
 
   const handleAdjustTime = (entryId: string) => {
     const timeEntry = rawEntries.find((entry) => entry.id === entryId);
@@ -118,17 +160,19 @@ export function TimeEntryList({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rawEntries.length === 0 ? (
+          {filteredEntries.length === 0 ? (
             <TableRow>
               <TableCell
                 colSpan={showEmployeeInfo ? 7 : 6}
                 className="text-center py-8 text-muted-foreground"
               >
-                No time entries found
+                {searchQuery || statusFilter !== "ALL"
+                  ? "No entries match your search criteria"
+                  : "No time entries found"}
               </TableCell>
             </TableRow>
           ) : (
-            rawEntries.map((entry) => (
+            filteredEntries.map((entry) => (
               <TableRow key={entry.id}>
                 {/* Employee Info */}
                 {showEmployeeInfo && (
@@ -148,11 +192,7 @@ export function TimeEntryList({
                 <TableCell>
                   <div className="flex items-center space-x-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>
-                      {entry.clockInTime
-                        ? formatPacificDate(entry.clockInTime)
-                        : "-"}
-                    </span>
+                    <span>{entry.date || "-"}</span>
                   </div>
                 </TableCell>
 
@@ -161,24 +201,31 @@ export function TimeEntryList({
                   <div className="flex items-center space-x-2">
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <span>
-                      {formatPacificTimeRange(
-                        entry.clockInTime,
-                        entry.clockOutTime
-                      )}
+                      {entry.clockOutTime
+                        ? `${entry.clockInTime} - ${entry.clockOutTime}`
+                        : `${entry.clockInTime} - Still Working`}
                     </span>
                   </div>
                 </TableCell>
 
                 {/* Duration */}
                 <TableCell>
-                  {calculateDuration(entry.clockInTime, entry.clockOutTime)}
+                  {entry.totalHours
+                    ? `${Math.floor(entry.totalHours)}h ${Math.round(
+                        (entry.totalHours % 1) * 60
+                      )}m`
+                    : "-"}
                 </TableCell>
 
                 {/* Location */}
                 <TableCell>
                   <div className="flex items-center space-x-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span>{entry.schedule?.position || "N/A"}</span>
+                    <span>
+                      {entry.schedulePosition ||
+                        entry.schedule?.position ||
+                        "N/A"}
+                    </span>
                   </div>
                 </TableCell>
 

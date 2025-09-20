@@ -123,3 +123,17 @@ export const formatRelativeTime = (utcDateTime: string | Date): string => {
     typeof utcDateTime === "string" ? new Date(utcDateTime) : utcDateTime;
   return formatDistanceToNow(utcDate, { addSuffix: true });
 };
+
+/**
+ * Filter array of items by client timezone "today"
+ * Same logic as used in Schedule components for consistent filtering
+ */
+export const filterByClientTimezoneToday = <T extends { startTime: string }>(
+  items: T[]
+): T[] => {
+  const todayDateString = new Date().toDateString(); // Client timezone "today"
+  return items.filter((item) => {
+    const itemDate = new Date(item.startTime).toDateString(); // UTC → Client timezone
+    return itemDate === todayDateString;
+  });
+};

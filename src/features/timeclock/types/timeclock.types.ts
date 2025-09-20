@@ -48,6 +48,14 @@ export interface TimeEntryDisplay {
   gracePeriodApplied: boolean;
   isEarlyClockOut: boolean;
   isOvertime: boolean;
+  employee?: {
+    firstName?: string;
+    lastName?: string;
+    employeeNumber?: string;
+  };
+  schedule?: {
+    position?: string;
+  };
 }
 
 // Clock Status Card Types
