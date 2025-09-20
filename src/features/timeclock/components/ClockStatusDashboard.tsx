@@ -16,8 +16,12 @@ import { useGetTimeEntriesQuery } from "@/store/api/timeclockApi";
 import { useGetTodayRosterQuery } from "@/store/api/schedulesApi";
 import { SearchFilter } from "@/shared/components/SearchFilter";
 import { EmployeeStatusCard } from "./EmployeeStatusCard";
-import { EMPLOYEE_STATUS_COLORS, EmployeeClockSummary } from "@empcon/types";
+import { EmployeeClockSummary } from "@empcon/types";
 import { filterByClientTimezoneToday, getPacificToday } from "@/shared/utils/dateTime";
+import {
+  combineSchedulesWithTimeEntries,
+  calculateDashboardSummary,
+} from "@/shared/mappers";
 
 interface ClockStatusDashboardProps {
   showDetailedView?: boolean;
@@ -67,82 +71,15 @@ export function ClockStatusDashboard({
     refetchEntries();
   };
 
-  // ✅ Transform Schedule data for Live Status display
+  // Transform Schedule and TimeEntry data using shared mapper
   const employeeSummaries: EmployeeClockSummary[] = useMemo(() => {
     if (!rosterData?.schedules || !timeEntriesData?.data) return [];
 
     // Apply client timezone filtering (same as TodayRoster)
     const todaySchedules = filterByClientTimezoneToday(rosterData.schedules);
 
-    // Helper function to calculate schedule hours
-    const calculateScheduleHours = (startTime: string, endTime: string): number => {
-      const start = new Date(startTime);
-      const end = new Date(endTime);
-      return (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-    };
-
-    // Process each scheduled employee (filtered by client timezone)
-    return todaySchedules.map(schedule => {
-      // Find related time entries for this schedule
-      const relatedEntries = timeEntriesData.data.filter(
-        entry => entry.scheduleId === schedule.id
-      );
-
-      // Find current clocked-in entry
-      const currentEntry = relatedEntries.find(
-        entry => entry.status === "CLOCKED_IN"
-      );
-
-      // Find completed entries
-      const completedEntries = relatedEntries.filter(
-        entry => entry.status === "CLOCKED_OUT"
-      );
-
-      // Calculate worked hours
-      const workedHours = completedEntries.reduce(
-        (sum, entry) => sum + (entry.totalHours || 0),
-        0
-      );
-
-      // Calculate basic statistics
-      const isCurrentlyClocked = !!currentEntry;
-      const completedShifts = completedEntries.length;
-      const isOvertime = workedHours > 8;
-      const scheduledHours = calculateScheduleHours(schedule.startTime, schedule.endTime);
-
-      // Determine status
-      let status: EmployeeClockSummary["currentStatus"];
-      if (isCurrentlyClocked) {
-        status = isOvertime ? "OVERTIME" : "IN_PROGRESS";
-      } else if (completedShifts > 0) {
-        status = isOvertime ? "OVERTIME" : "COMPLETED";
-      } else {
-        status = "NOT_STARTED"; // ⭐ Key: Shows employees who haven't clocked in yet
-      }
-
-      return {
-        employeeId: schedule.employee.id,
-        employeeName: `${schedule.employee.firstName} ${schedule.employee.lastName}`.trim(),
-        employeeNumber: schedule.employee.employeeNumber,
-        currentStatus: status,
-        statusColor: EMPLOYEE_STATUS_COLORS[status],
-        clockedIn: isCurrentlyClocked,
-        lastClockInTime: currentEntry?.clockInTime,
-        todaySchedules: 1, // One schedule per employee in this view
-        completedShifts,
-        workedHours: Number(workedHours.toFixed(2)),
-        scheduledHours: Number(scheduledHours.toFixed(2)),
-        isLate: false, // TODO: Calculate based on schedule vs actual clock-in time
-        isOvertime,
-
-        // ✅ UX improvement fields
-        scheduledStart: schedule.startTime,
-        scheduledEnd: schedule.endTime,
-        actualClockInTime: currentEntry?.clockInTime,
-        actualClockOutTime: completedEntries[0]?.clockOutTime,
-        gracePeriodApplied: currentEntry?.gracePeriodApplied,
-      };
-    });
+    // Use shared mapper to combine schedules with time entries
+    return combineSchedulesWithTimeEntries(todaySchedules, timeEntriesData.data);
   }, [rosterData, timeEntriesData]);
 
   // Apply filters
@@ -179,35 +116,9 @@ export function ClockStatusDashboard({
     return filtered;
   }, [employeeSummaries, searchQuery, statusFilter]);
 
-  // Calculate dashboard summary
+  // Calculate dashboard summary using shared mapper
   const dashboardSummary = useMemo(() => {
-    if (employeeSummaries.length === 0) return null;
-
-    const totalEmployees = employeeSummaries.length;
-    const clockedInCount = employeeSummaries.filter(
-      (emp) => emp.clockedIn
-    ).length;
-    const completedCount = employeeSummaries.filter(
-      (emp) => emp.currentStatus === "COMPLETED"
-    ).length;
-    const lateCount = employeeSummaries.filter((emp) => emp.isLate).length;
-    const overtimeCount = employeeSummaries.filter(
-      (emp) => emp.isOvertime
-    ).length;
-
-    return {
-      totalEmployees,
-      clockedInCount,
-      completedCount,
-      lateCount,
-      overtimeCount,
-      attendanceRate:
-        totalEmployees > 0
-          ? Math.round(
-              ((clockedInCount + completedCount) / totalEmployees) * 100
-            )
-          : 0,
-    };
+    return calculateDashboardSummary(employeeSummaries);
   }, [employeeSummaries]);
 
   if (isLoading) {

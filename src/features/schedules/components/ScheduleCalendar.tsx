@@ -12,23 +12,13 @@ import {
   Calendar as CalendarIcon,
 } from "lucide-react";
 import { Schedule } from "@empcon/types";
+import {
+  ScheduleEvent,
+  transformSchedulesToCalendarSummaryEvents,
+} from "@/shared/mappers";
 
 const localizer = momentLocalizer(moment);
 
-interface ScheduleEvent {
-  id: string;
-  title: string;
-  start: Date;
-  end: Date;
-  resource: {
-    schedule: Schedule;
-    employeeName: string;
-    position?: string;
-    status: Schedule["status"];
-    type: "regular" | "night" | "overtime";
-    daySchedules?: Schedule[]; // For summary events - all schedules for this date
-  };
-}
 
 interface ScheduleCalendarProps {
   schedules: Schedule[];
@@ -49,61 +39,9 @@ export function ScheduleCalendar({
   const [date, setDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  // Group schedules by date and create summary events
+  // Transform schedules to calendar summary events using shared mapper
   const events: ScheduleEvent[] = useMemo(() => {
-    const groupedByDate: { [key: string]: Schedule[] } = {};
-
-    // Group schedules by date (YYYY-MM-DD format)
-    schedules.forEach((schedule) => {
-      const dateKey = new Date(schedule.startTime).toDateString();
-      if (!groupedByDate[dateKey]) {
-        groupedByDate[dateKey] = [];
-      }
-      groupedByDate[dateKey].push(schedule);
-    });
-
-    // Create summary events for each date
-    return Object.entries(groupedByDate).map(([dateKey, daySchedules]) => {
-      const date = new Date(dateKey);
-      const employeeCount = daySchedules.length;
-
-      // Calculate summary info
-      const hasNightShifts = daySchedules.some((s) => {
-        const hour = new Date(s.startTime).getHours();
-        return hour >= 22 || hour < 6;
-      });
-
-      const hasOvertime = daySchedules.some((s) => {
-        const start = new Date(s.startTime);
-        const end = new Date(s.endTime);
-        return end.getTime() - start.getTime() > 8 * 60 * 60 * 1000;
-      });
-
-      return {
-        id: `summary-${dateKey}`,
-        title: readOnly 
-          ? `📅 ${employeeCount} schedule${employeeCount !== 1 ? "s" : ""}`
-          : `📅 ${employeeCount} employee${employeeCount !== 1 ? "s" : ""}`,
-        start: new Date(date.getFullYear(), date.getMonth(), date.getDate()),
-        end: new Date(
-          date.getFullYear(),
-          date.getMonth(),
-          date.getDate(),
-          23,
-          59
-        ),
-        resource: {
-          schedule: daySchedules[0], // Keep first schedule for reference
-          employeeName: readOnly 
-            ? `${employeeCount} schedules`
-            : `${employeeCount} employees`,
-          position: undefined,
-          status: "SCHEDULED" as const,
-          type: hasNightShifts ? "night" : hasOvertime ? "overtime" : "regular",
-          daySchedules, // Include all schedules for this date
-        },
-      };
-    });
+    return transformSchedulesToCalendarSummaryEvents(schedules, readOnly);
   }, [schedules, readOnly]);
 
   // Handle event click to select date and show details
