@@ -14,8 +14,7 @@ import {
 import { useGetTodayRosterQuery } from "@/store/api/schedulesApi";
 import { LoadingIndicator } from "@/shared/components/Loading";
 import { ScheduleStatusBadge } from "@/shared/components/ScheduleStatusBadge";
-import { formatScheduleTime } from "@/lib/formatter";
-import { filterByClientTimezoneToday } from "@/shared/utils/dateTime";
+import { formatScheduleTime, filterByClientTimezoneToday } from "@/shared/utils/dateTime";
 
 interface TodayRosterProps {
   className?: string;

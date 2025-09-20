@@ -8,18 +8,31 @@ import { formatDistanceToNow } from "date-fns";
 export const VANCOUVER_TIMEZONE = "America/Vancouver";
 
 // ===============================
-// LEGACY UTILITIES (Keep for backward compatibility)
+// FORM INPUT UTILITIES (HTML input[type="date"] and input[type="time"])
 // ===============================
+
+/**
+ * Format date for HTML date input (YYYY-MM-DD format)
+ * Handles both Date objects and ISO date strings
+ */
 export const formatDateForInput = (date: string | Date): string => {
   const d = new Date(date);
   return d.toISOString().split("T")[0];
 };
 
+/**
+ * Format time for HTML time input (HH:mm format)
+ * Handles both Date objects and ISO datetime strings
+ */
 export const formatTimeForInput = (date: string | Date): string => {
   const d = new Date(date);
   return d.toTimeString().slice(0, 5);
 };
 
+/**
+ * Combine date and time strings into ISO datetime string
+ * Used for form data processing
+ */
 export const combineDateAndTime = (date: string, time: string): string => {
   const dateObj = new Date(`${date}T${time}`);
   return dateObj.toISOString();
@@ -138,6 +151,49 @@ export const filterByClientTimezoneToday = <T extends { startTime: string }>(
   });
 };
 
+// ===============================
+// SCHEDULE FORMATTING UTILITIES (Pacific Time)
+// ===============================
+
+/**
+ * Format schedule date in Pacific Time (MMM d, yyyy format)
+ * Consistent with other Pacific Time utilities
+ */
+export const formatScheduleDate = (date: string): string => {
+  if (!date) return "";
+  return formatPacificDate(date);
+};
+
+/**
+ * Format schedule time in Pacific Time (24-hour format: HH:mm)
+ * Consistent with Pacific timezone handling
+ */
+export const formatScheduleTime = (date: string): string => {
+  if (!date) return "";
+  return formatPacificTime(date);
+};
+
+/**
+ * Calculate and format work duration (startTime, endTime, breakDuration → "8h 30m")
+ * Uses UTC time calculation for accuracy
+ */
+export const formatScheduleDuration = (
+  startTime: string,
+  endTime: string,
+  breakDuration: number = 0
+): string => {
+  if (!startTime || !endTime) return "";
+
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+  const totalMinutes = Math.floor((end.getTime() - start.getTime()) / (1000 * 60));
+  const workMinutes = totalMinutes - breakDuration;
+  const hours = Math.floor(workMinutes / 60);
+  const minutes = workMinutes % 60;
+
+  return `${hours}h ${minutes}m`;
+};
+
 /**
  * Convert UTC datetime to Pacific Time date string (YYYY-MM-DD format)
  * Used for accurate date comparisons in Pacific timezone
@@ -160,4 +216,66 @@ export const isUTCDateInPacificRange = (
 ): boolean => {
   const pacificDate = convertUTCToPacificDate(utcDateTime);
   return pacificDate >= startDate && pacificDate <= endDate;
+};
+
+// ===============================
+// TIMEZONE-SAFE RANGE UTILITIES
+// ===============================
+
+/**
+ * Expand date range by ±1 day for timezone-safe API requests
+ * Prevents missing data due to timezone conversions between client and server
+ *
+ * @param startDate - Start date in YYYY-MM-DD format
+ * @param endDate - End date in YYYY-MM-DD format
+ * @returns Expanded date range with buffer days
+ */
+export const expandRangeForTimezoneSafety = (
+  startDate: string,
+  endDate: string
+): { startDate: string; endDate: string } => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  // Subtract 1 day from start, add 1 day to end
+  start.setDate(start.getDate() - 1);
+  end.setDate(end.getDate() + 1);
+
+  return {
+    startDate: start.toISOString().split('T')[0],
+    endDate: end.toISOString().split('T')[0],
+  };
+};
+
+/**
+ * Check if a UTC datetime represents "today" in Pacific Time
+ * More explicit version of existing filtering logic
+ *
+ * @param utcDateTime - UTC datetime string or Date object
+ * @returns true if the datetime falls on today's Pacific Time date
+ */
+export const isTodayInPacific = (utcDateTime: string | Date): boolean => {
+  const todayPacific = getPacificToday();
+  const pacificDate = convertUTCToPacificDate(utcDateTime);
+  return pacificDate === todayPacific;
+};
+
+/**
+ * Get date range for "today" with timezone safety buffer
+ * Returns a 3-day range (yesterday, today, tomorrow) for safe API requests
+ * Client-side filtering can then apply exact "today" logic
+ *
+ * @returns Object with expanded start/end dates and Pacific "today" for filtering
+ */
+export const getTodayRangeWithBuffer = (): {
+  apiRange: { startDate: string; endDate: string };
+  pacificToday: string;
+} => {
+  const today = getPacificToday();
+  const apiRange = expandRangeForTimezoneSafety(today, today);
+
+  return {
+    apiRange,
+    pacificToday: today,
+  };
 };

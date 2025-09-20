@@ -5,7 +5,7 @@ import { Calendar, Clock, TrendingUp, CheckCircle } from "lucide-react";
 import { StatsCard } from "@/shared/components/StatsCard";
 import { useGetSchedulesByDateRangeQuery } from "@/store/api/schedulesApi";
 import { LoadingIndicator } from "@/shared/components/Loading";
-import { formatScheduleTime } from "@/lib/formatter";
+import { formatScheduleTime } from "@/shared/utils/dateTime";
 
 interface EmployeeScheduleHeaderProps {
   className?: string;

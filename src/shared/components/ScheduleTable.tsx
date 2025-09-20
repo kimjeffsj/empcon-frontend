@@ -16,7 +16,7 @@ import {
   formatScheduleDate,
   formatScheduleTime,
   formatScheduleDuration,
-} from "@/lib/formatter";
+} from "@/shared/utils/dateTime";
 
 interface ScheduleTableProps {
   schedules: Schedule[];
