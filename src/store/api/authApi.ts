@@ -17,6 +17,14 @@ export const authApi = baseApi.injectEndpoints({
         method: 'POST',
       }),
     }),
+    refreshToken: builder.mutation<void, void>({
+      query: () => ({
+        url: '/auth/refresh',
+        method: 'POST',
+        body: {}, // Empty body since refresh token comes from httpOnly cookie
+      }),
+      transformResponse: (response: ApiResponse<void>) => response.data,
+    }),
     getProfile: builder.query<User, void>({
       query: () => '/auth/profile',
       transformResponse: (response: ApiResponse<{ user: User }>) => response.data!.user,
@@ -28,5 +36,6 @@ export const authApi = baseApi.injectEndpoints({
 export const {
   useLoginMutation,
   useLogoutMutation,
+  useRefreshTokenMutation,
   useGetProfileQuery,
 } = authApi
