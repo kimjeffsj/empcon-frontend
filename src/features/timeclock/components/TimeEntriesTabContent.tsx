@@ -5,6 +5,15 @@ import { TimeSummaryStats } from "./TimeSummaryStats";
 import { TimeEntryList } from "./TimeEntryList";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 
+// Time Summary interface
+interface TimeSummary {
+  totalEntries: number;
+  completedShifts: number;
+  totalHours: number;
+  averageHours: number;
+  overtimeHours: number;
+}
+
 // Separate component for Time Entries tab content
 interface TimeEntriesTabContentProps {
   dateRange: { startDate: string; endDate: string } | undefined;
@@ -22,7 +31,7 @@ export function TimeEntriesTabContent({
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
   // Summary state received from TimeEntryList
-  const [summary, setSummary] = useState({
+  const [summary, setSummary] = useState<TimeSummary>({
     totalEntries: 0,
     completedShifts: 0,
     totalHours: 0,
@@ -31,7 +40,10 @@ export function TimeEntriesTabContent({
   });
   const [isLoadingSummary, setIsLoadingSummary] = useState(true);
 
-  const handleSummaryLoad = useCallback((summaryData, isLoading) => {
+  const handleSummaryLoad = useCallback((
+    summaryData: TimeSummary,
+    isLoading: boolean
+  ) => {
     setSummary((prev) =>
       JSON.stringify(prev) !== JSON.stringify(summaryData) ? summaryData : prev
     );

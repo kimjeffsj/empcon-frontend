@@ -152,6 +152,7 @@ export default function EmployeeTimeclockPage() {
                   onChange: setHistoryStatusFilter,
                   options: [
                     { value: "ALL", label: "All Status" },
+                    { value: "CLOCKED_IN", label: "Clocked In" },
                     { value: "CLOCKED_OUT", label: "Completed" },
                     { value: "ADJUSTED", label: "Adjusted" },
                   ],
@@ -172,6 +173,8 @@ export default function EmployeeTimeclockPage() {
                 <TimeEntryList
                   employeeId={user?.id}
                   dateRange={getHistoryDateRange()}
+                  searchQuery={historySearchQuery}
+                  statusFilter={historyStatusFilter}
                   showEmployeeInfo={false}
                   allowManualAdjustments={false}
                   className="border-none shadow-none"

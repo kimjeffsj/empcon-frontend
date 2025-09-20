@@ -277,13 +277,25 @@ function transformTimeEntryForDisplay(entry: TimeEntry): TimeEntryDisplay {
   const isOvertime = (entry.totalHours || 0) > 8;
 
   // Status text based on status and conditions
-  let statusText = entry.status.replace("_", " ");
-  if (entry.status === "CLOCKED_OUT") {
-    if (isOvertime) statusText = "Completed (OT)";
-    else if (isEarlyClockOut) statusText = "Early Clock-out";
-    else statusText = "Completed";
-  } else if (entry.status === "ADJUSTED") {
-    statusText = "Manually Adjusted";
+  let statusText: string;
+  switch (entry.status) {
+    case "CLOCKED_IN":
+      statusText = isOvertime ? "Clocked In (OT)" : "Clocked In";
+      break;
+    case "CLOCKED_OUT":
+      if (isOvertime) {
+        statusText = "Completed (OT)";
+      } else if (isEarlyClockOut) {
+        statusText = "Early Clock-out";
+      } else {
+        statusText = "Completed";
+      }
+      break;
+    case "ADJUSTED":
+      statusText = "Adjusted";
+      break;
+    default:
+      statusText = String(entry.status).replace("_", " ");
   }
 
   return {
