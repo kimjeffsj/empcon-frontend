@@ -15,7 +15,11 @@ import {
 } from "@empcon/types";
 
 import { toast } from "sonner";
-import { formatPacificTime, formatPacificDate } from "@/shared/utils/dateTime";
+import {
+  formatPacificTime,
+  formatPacificDate,
+  isUTCDateInPacificRange
+} from "@/shared/utils/dateTime";
 import { TimeEntryDisplay, TimeEntryListConfig } from "../components";
 
 interface UseTimeEntriesOptions {
@@ -100,21 +104,16 @@ export function useTimeEntries(options: UseTimeEntriesOptions = {}) {
 
     let filteredEntries = timeEntriesData.data;
 
-    // ✅ Schedule time-based filtering (consistent with Live Status approach)
+    // ✅ Pacific Time-based filtering (fixes UTC timezone issues)
     if (options.defaultFilters?.startDate && options.defaultFilters?.endDate) {
-      const startDate = new Date(options.defaultFilters.startDate);
-      const endDate = new Date(options.defaultFilters.endDate);
+      const startDate = options.defaultFilters.startDate;
+      const endDate = options.defaultFilters.endDate;
 
       filteredEntries = filteredEntries.filter(entry => {
         if (!entry.schedule?.startTime) return false;
 
-        // Compare schedule start time by date only (remove time component)
-        const scheduleDate = new Date(entry.schedule.startTime);
-        const scheduleDateOnly = new Date(scheduleDate.toDateString());
-        const startDateOnly = new Date(startDate.toDateString());
-        const endDateOnly = new Date(endDate.toDateString());
-
-        return scheduleDateOnly >= startDateOnly && scheduleDateOnly <= endDateOnly;
+        // Use Pacific Time conversion for accurate date comparison
+        return isUTCDateInPacificRange(entry.schedule.startTime, startDate, endDate);
       });
     }
 

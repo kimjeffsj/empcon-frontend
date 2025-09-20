@@ -137,3 +137,27 @@ export const filterByClientTimezoneToday = <T extends { startTime: string }>(
     return itemDate === todayDateString;
   });
 };
+
+/**
+ * Convert UTC datetime to Pacific Time date string (YYYY-MM-DD format)
+ * Used for accurate date comparisons in Pacific timezone
+ */
+export const convertUTCToPacificDate = (utcDateTime: string | Date): string => {
+  const utcDate = typeof utcDateTime === "string" ? new Date(utcDateTime) : utcDateTime;
+  return format(toZonedTime(utcDate, VANCOUVER_TIMEZONE), "yyyy-MM-dd", {
+    timeZone: VANCOUVER_TIMEZONE,
+  });
+};
+
+/**
+ * Check if UTC datetime falls within Pacific Time date range
+ * Converts UTC time to Pacific Time for accurate date-only comparison
+ */
+export const isUTCDateInPacificRange = (
+  utcDateTime: string | Date,
+  startDate: string,
+  endDate: string
+): boolean => {
+  const pacificDate = convertUTCToPacificDate(utcDateTime);
+  return pacificDate >= startDate && pacificDate <= endDate;
+};
