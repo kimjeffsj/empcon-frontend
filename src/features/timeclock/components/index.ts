@@ -18,7 +18,6 @@ export type {
   TimeEntryDisplay,
   ClockStatusCardData,
   TimeEntryListConfig,
-  EmployeeClockSummary,
   TimeAdjustmentModalData,
   ClockNotification,
 } from "../types/timeclock.types";

@@ -33,7 +33,6 @@ export function ClockInOutButton({
     buttonConfig,
     todaySummary,
     currentTimeEntry,
-    nextSchedule,
     handleClockIn,
     handleClockOut,
     isLoading,
@@ -94,7 +93,11 @@ export function ClockInOutButton({
           {isAnyLoading ? (
             <>
               <buttonConfig.icon className="mr-2 h-5 w-5 animate-spin" />
-              {isClockingIn ? "Clocking In..." : isClockingOut ? "Clocking Out..." : "Loading..."}
+              {isClockingIn
+                ? "Clocking In..."
+                : isClockingOut
+                ? "Clocking Out..."
+                : "Loading..."}
             </>
           ) : (
             <>
@@ -136,7 +139,10 @@ export function ClockInOutButton({
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold">Time Clock</CardTitle>
           {clockStatus.data?.isClocked && (
-            <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+            <Badge
+              variant="default"
+              className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+            >
               <Clock className="mr-1 h-3 w-3" />
               Clocked In
             </Badge>
@@ -151,7 +157,8 @@ export function ClockInOutButton({
             <div className="flex items-center space-x-2">
               <Clock className="h-4 w-4 text-green-600" />
               <span className="text-sm font-medium text-green-800 dark:text-green-200">
-                Clocked in at {formatPacificTime12(currentTimeEntry.clockInTime)}
+                Clocked in at{" "}
+                {formatPacificTime12(currentTimeEntry.clockInTime)}
               </span>
             </div>
             {currentTimeEntry.schedule?.position && (
@@ -172,7 +179,8 @@ export function ClockInOutButton({
               </span>
             </div>
             <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-              Starts at {formatPacificTime12(clockStatus.nextSchedule.startTime)}
+              Starts at{" "}
+              {formatPacificTime12(clockStatus.nextSchedule.startTime)}
               {clockStatus.nextSchedule.timeUntilClockIn > 0 && (
                 <span className="ml-2 text-xs">
                   (Available in {clockStatus.nextSchedule.timeUntilClockIn}m)
@@ -188,7 +196,8 @@ export function ClockInOutButton({
             <div className="flex items-center space-x-2">
               <AlertTriangle className="h-4 w-4 text-amber-600" />
               <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                Scheduled until {formatPacificTime12(currentTimeEntry.schedule.endTime)}
+                Scheduled until{" "}
+                {formatPacificTime12(currentTimeEntry.schedule.endTime)}
               </span>
             </div>
             <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
@@ -215,8 +224,8 @@ export function ClockInOutButton({
               className="w-full"
             />
             <div className="flex space-x-2">
-              <Button 
-                onClick={handleButtonClick} 
+              <Button
+                onClick={handleButtonClick}
                 className="flex-1"
                 variant={buttonConfig.variant}
                 disabled={isAnyLoading}
@@ -233,8 +242,8 @@ export function ClockInOutButton({
                   </>
                 )}
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={handleLocationCancel}
                 disabled={isAnyLoading}
               >
@@ -255,7 +264,11 @@ export function ClockInOutButton({
             {isAnyLoading ? (
               <>
                 <buttonConfig.icon className="mr-2 h-5 w-5 animate-spin" />
-                {isClockingIn ? "Clocking In..." : isClockingOut ? "Clocking Out..." : "Loading..."}
+                {isClockingIn
+                  ? "Clocking In..."
+                  : isClockingOut
+                  ? "Clocking Out..."
+                  : "Loading..."}
               </>
             ) : (
               <>
@@ -272,13 +285,15 @@ export function ClockInOutButton({
             <div className="flex justify-between">
               <span>Today's Hours:</span>
               <span className="font-medium">
-                {todaySummary.totalHoursWorked}h / {todaySummary.scheduledHours}h
+                {todaySummary.totalHoursWorked}h / {todaySummary.scheduledHours}
+                h
               </span>
             </div>
             <div className="flex justify-between">
               <span>Schedules:</span>
               <span className="font-medium">
-                {todaySummary.completedShifts} of {todaySummary.totalSchedules} completed
+                {todaySummary.completedShifts} of {todaySummary.totalSchedules}{" "}
+                completed
               </span>
             </div>
           </div>
