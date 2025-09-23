@@ -53,20 +53,21 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
         // Retry the original request with fresh token
         result = await baseQuery(args, api, extraOptions);
       } else {
-        // Token refresh failed
+        // Token refresh failed - preserve user data but clear auth
         api.dispatch(tokenRefreshFailed());
 
-        // Redirect to login page
-        if (typeof window !== 'undefined') {
+        // Only redirect to login if not on login page
+        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
           window.location.href = '/login';
         }
       }
-    } catch {
-      // Token refresh failed
+    } catch (error) {
+      // Token refresh failed - preserve user data but clear auth
+      console.warn('Token refresh failed:', error);
       api.dispatch(tokenRefreshFailed());
 
-      // Redirect to login page
-      if (typeof window !== 'undefined') {
+      // Only redirect to login if not on login page
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
     }

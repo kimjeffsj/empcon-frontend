@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useGetProfileQuery } from "@/store/api/authApi";
-import { setCredentials } from "@/store/authSlice";
+import { setCredentials, clearUserData } from "@/store/authSlice";
 import { AppLayout } from "./AppLayout";
 import { LoadingIndicator } from "../components/Loading";
 
@@ -21,6 +21,9 @@ export const ProtectedLayout = ({ children }: ProtectedLayoutProps) => {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Check if user data is complete (has essential fields)
+  const isUserDataComplete = user && user.id && user.email && user.role;
+
   // Try to restore authentication state from cookies
   const {
     data: profileData,
@@ -29,8 +32,8 @@ export const ProtectedLayout = ({ children }: ProtectedLayoutProps) => {
     isLoading: isProfileLoading,
     isFetching,
   } = useGetProfileQuery(undefined, {
-    // Skip if already authenticated or on login page
-    skip: isAuthenticated || pathname === "/login",
+    // Skip if on login page OR if authenticated with complete user data
+    skip: pathname === "/login" || (isAuthenticated && isUserDataComplete),
     refetchOnMountOrArgChange: false,
     refetchOnFocus: false,
   });
@@ -58,9 +61,11 @@ export const ProtectedLayout = ({ children }: ProtectedLayoutProps) => {
     if (!isAuthenticated && !isProfileLoading && !isFetching && isError) {
       const timer = setTimeout(() => {
         // Double-check auth state hasn't changed during timeout
-        const currentAuth = (window as any).store?.getState?.()?.auth
-          ?.isAuthenticated;
+        const currentAuth = (window as unknown as { store?: { getState: () => RootState } })
+          .store?.getState?.()?.auth?.isAuthenticated;
         if (!currentAuth) {
+          // Clear any remaining user data before redirect
+          dispatch(clearUserData());
           router.push("/login");
         }
       }, 200); // Small delay to ensure auth state is properly restored
@@ -74,6 +79,7 @@ export const ProtectedLayout = ({ children }: ProtectedLayoutProps) => {
     isError,
     isProfileLoading,
     isFetching,
+    dispatch,
   ]);
 
   // If on login page, don't show AppLayout
@@ -81,13 +87,18 @@ export const ProtectedLayout = ({ children }: ProtectedLayoutProps) => {
     return <>{children}</>;
   }
 
-  // Show loading while checking authentication
-  if ((isProfileLoading || isFetching) && !isAuthenticated) {
+  // Show loading while checking authentication or fetching profile data
+  if (isProfileLoading || isFetching) {
     return <LoadingIndicator />;
   }
 
-  // If authenticated, show AppLayout
-  if (isAuthenticated && user) {
+  // Show loading if authenticated but user data is incomplete (waiting for profile fetch)
+  if (isAuthenticated && !isUserDataComplete) {
+    return <LoadingIndicator />;
+  }
+
+  // If authenticated with complete user data, show AppLayout
+  if (isAuthenticated && isUserDataComplete) {
     return <AppLayout>{children}</AppLayout>;
   }
 

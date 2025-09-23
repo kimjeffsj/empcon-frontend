@@ -47,6 +47,10 @@ const authSlice = createSlice({
       state.isRefreshing = false
       state.tokenExpired = false
     },
+    clearUserData: (state) => {
+      // Explicitly clear user data (used when redirecting to login)
+      state.user = null
+    },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload
     },
@@ -59,11 +63,12 @@ const authSlice = createSlice({
       // Keep user and isAuthenticated as they are
     },
     tokenRefreshFailed: (state) => {
-      state.user = null
+      // Clear authentication but preserve user info for potential recovery
       state.isAuthenticated = false
       state.isRefreshing = false
       state.tokenExpired = true
       state.isLoading = false
+      // Note: Keep user data for recovery, it will be cleared by ProtectedLayout redirect
     },
   },
 })
@@ -71,6 +76,7 @@ const authSlice = createSlice({
 export const {
   setCredentials,
   logout,
+  clearUserData,
   setLoading,
   setTokenRefreshing,
   tokenRefreshSuccess,
