@@ -22,7 +22,9 @@ export const ProtectedLayout = ({ children }: ProtectedLayoutProps) => {
   const pathname = usePathname();
 
   // Check if user data is complete (has essential fields)
-  const isUserDataComplete = user && user.id && user.email && user.role;
+  const isUserDataComplete = Boolean(
+    user && user.id && user.email && user.role
+  );
 
   // Try to restore authentication state from cookies
   const {
@@ -61,8 +63,9 @@ export const ProtectedLayout = ({ children }: ProtectedLayoutProps) => {
     if (!isAuthenticated && !isProfileLoading && !isFetching && isError) {
       const timer = setTimeout(() => {
         // Double-check auth state hasn't changed during timeout
-        const currentAuth = (window as unknown as { store?: { getState: () => RootState } })
-          .store?.getState?.()?.auth?.isAuthenticated;
+        const currentAuth = (
+          window as unknown as { store?: { getState: () => RootState } }
+        ).store?.getState?.()?.auth?.isAuthenticated;
         if (!currentAuth) {
           // Clear any remaining user data before redirect
           dispatch(clearUserData());
