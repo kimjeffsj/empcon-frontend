@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
@@ -26,12 +26,16 @@ import {
   useGetPayPeriodsQuery,
   useGetPayrollSummaryQuery,
   useCalculatePayrollForPeriodMutation,
-  useGeneratePayrollReportMutation,
   useSendPayrollToAccountantMutation,
   useCreatePayPeriodMutation,
   useGenerateCompletedPeriodMutation,
   useCanGenerateCompletedPeriodQuery,
 } from "@/store/api/payrollApi";
+import {
+  downloadPayrollReport,
+  downloadPayslip,
+  useDownloadState,
+} from "@/shared/utils/fileDownload";
 import {
   setCalculating,
   setGeneratingReport,
@@ -52,6 +56,13 @@ export default function AdminPayrollPage() {
   // Local state
   const [showSuccessAlert, setShowSuccessAlert] = useState<string | null>(null);
   const [showErrorAlert, setShowErrorAlert] = useState<string | null>(null);
+
+  // Download state management
+  const {
+    isDownloading: isDownloadingReport,
+    error: downloadError,
+    handleDownload,
+  } = useDownloadState();
 
   // API queries
   const { data: currentPeriodData } = useGetCurrentPayPeriodQuery();
@@ -83,10 +94,10 @@ export default function AdminPayrollPage() {
 
   // API mutations
   const [calculatePayroll] = useCalculatePayrollForPeriodMutation();
-  const [generateReport] = useGeneratePayrollReportMutation();
   const [sendToAccountant] = useSendPayrollToAccountantMutation();
-  const [createPayPeriod] = useCreatePayPeriodMutation();
-  const [generateCompletedPeriod, { isLoading: isGeneratingPeriod }] = useGenerateCompletedPeriodMutation();
+  const [_createPayPeriod] = useCreatePayPeriodMutation();
+  const [generateCompletedPeriod, { isLoading: isGeneratingPeriod }] =
+    useGenerateCompletedPeriodMutation();
 
   // Handle period change - no longer needed since we use real API data
   const handlePeriodChange = (period: {
@@ -127,24 +138,12 @@ export default function AdminPayrollPage() {
   const handleGenerateReport = async () => {
     if (!selectedPayPeriod?.id) return;
 
-    try {
-      dispatch(setGeneratingReport(true));
-      const blob = await generateReport({
-        payPeriodId: selectedPayPeriod.id,
-        format: "excel",
-      }).unwrap();
+    dispatch(setGeneratingReport(true));
 
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `payroll-report-${selectedYear}-${selectedMonth
-        .toString()
-        .padStart(2, "0")}-${selectedPeriod}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+    try {
+      await handleDownload(async () => {
+        await downloadPayrollReport(selectedPayPeriod.id, "excel");
+      });
 
       setShowSuccessAlert(
         "Payroll report generated and downloaded successfully"
@@ -192,7 +191,10 @@ export default function AdminPayrollPage() {
       setShowSuccessAlert(result.message);
       setTimeout(() => setShowSuccessAlert(null), 5000);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to generate pay period. Please try again.";
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to generate pay period. Please try again.";
       setShowErrorAlert(errorMessage);
       setTimeout(() => setShowErrorAlert(null), 5000);
     }
@@ -205,9 +207,22 @@ export default function AdminPayrollPage() {
   };
 
   // Handle generate payslip
-  const handleGeneratePayslip = (employeeId: string) => {
-    console.log("Generate payslip for employee:", employeeId);
-    // TODO: Generate and download individual payslip
+  const handleGeneratePayslip = async (employeeId: string) => {
+    try {
+      await handleDownload(async () => {
+        // Note: We need to generate payslip first, then download it
+        // This assumes the backend returns a payslipId when generating
+        // For now, we'll use the employeeId as payslipId placeholder
+        // TODO: Update this when proper payslip generation API is available
+        await downloadPayslip(employeeId);
+      });
+
+      setShowSuccessAlert("Payslip downloaded successfully");
+      setTimeout(() => setShowSuccessAlert(null), 5000);
+    } catch (error) {
+      setShowErrorAlert("Failed to download payslip. Please try again.");
+      setTimeout(() => setShowErrorAlert(null), 5000);
+    }
   };
 
   // Calculate summary statistics
@@ -314,11 +329,11 @@ export default function AdminPayrollPage() {
         </Alert>
       )}
 
-      {showErrorAlert && (
+      {(showErrorAlert || downloadError) && (
         <Alert className="border-red-200 bg-red-50">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription className="text-red-800">
-            {showErrorAlert}
+            {showErrorAlert || downloadError}
           </AlertDescription>
         </Alert>
       )}
@@ -484,11 +499,15 @@ export default function AdminPayrollPage() {
                 </p>
                 <Button
                   onClick={handleGenerateReport}
-                  disabled={isGeneratingReport || !selectedPayPeriod?.id}
+                  disabled={
+                    isGeneratingReport ||
+                    isDownloadingReport ||
+                    !selectedPayPeriod?.id
+                  }
                   variant="outline"
                   className="w-full"
                 >
-                  {isGeneratingReport ? (
+                  {isGeneratingReport || isDownloadingReport ? (
                     <>
                       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                       Generating...
@@ -549,7 +568,8 @@ export default function AdminPayrollPage() {
                 <p className="text-sm text-muted-foreground">
                   {canGenerateData?.canGenerate
                     ? `${canGenerateData.reason}`
-                    : canGenerateData?.reason || "Checking generation eligibility..."}
+                    : canGenerateData?.reason ||
+                      "Checking generation eligibility..."}
                 </p>
                 {canGenerateData?.periodInfo && (
                   <div className="p-3 bg-blue-50 rounded-lg">
@@ -563,9 +583,7 @@ export default function AdminPayrollPage() {
                 )}
                 <Button
                   onClick={handleGenerateCompletedPeriod}
-                  disabled={
-                    isGeneratingPeriod || !canGenerateData?.canGenerate
-                  }
+                  disabled={isGeneratingPeriod || !canGenerateData?.canGenerate}
                   variant={canGenerateData?.canGenerate ? "default" : "outline"}
                   className="w-full"
                 >

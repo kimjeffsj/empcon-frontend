@@ -6,8 +6,6 @@ import {
   GetPayPeriodsParams,
   GetPayPeriodsResponse,
   GetCurrentPayPeriodResponse,
-  PayrollCalculationInput,
-  PayrollCalculationResult,
   EmployeePayrollSummary,
   PayrollBatchCalculation,
   ApiResponse,
@@ -82,18 +80,6 @@ export const payrollApi = baseApi.injectEndpoints({
     }),
 
     // Payroll Calculations
-    calculatePayrollForEmployee: builder.mutation<
-      PayrollCalculationResult,
-      PayrollCalculationInput
-    >({
-      query: (calculationData) => ({
-        url: "/payroll/calculate/employee",
-        method: "POST",
-        body: calculationData,
-      }),
-      invalidatesTags: [{ type: "Payroll", id: "CALCULATIONS" }],
-    }),
-
     calculatePayrollForPeriod: builder.mutation<
       PayrollBatchCalculation,
       { payPeriodId: string }
@@ -145,29 +131,6 @@ export const payrollApi = baseApi.injectEndpoints({
         body: { employeeId, payPeriodId },
       }),
       invalidatesTags: [{ type: "Payroll", id: "PAYSLIPS" }],
-    }),
-
-    getPayslip: builder.query<
-      Blob,
-      { employeeId: string; payPeriodId: string }
-    >({
-      query: ({ employeeId, payPeriodId }) =>
-        `/payroll/payslips/${payPeriodId}/${employeeId}`,
-      responseHandler: "blob",
-      providesTags: [{ type: "Payroll", id: "PAYSLIPS" }],
-    }),
-
-    // Reports
-    generatePayrollReport: builder.mutation<
-      Blob,
-      { payPeriodId: string; format?: "excel" | "pdf" }
-    >({
-      query: ({ payPeriodId, format = "excel" }) => ({
-        url: "/payroll/reports/generate",
-        method: "POST",
-        body: { payPeriodId, format },
-        responseHandler: "blob",
-      }),
     }),
 
     // Email Integration
@@ -238,17 +201,14 @@ export const {
   useDeletePayPeriodMutation,
 
   // Calculation hooks
-  useCalculatePayrollForEmployeeMutation,
   useCalculatePayrollForPeriodMutation,
   useGetPayrollSummaryQuery,
   useGetEmployeePayrollSummaryQuery,
 
   // Payslip hooks
   useGeneratePayslipMutation,
-  useGetPayslipQuery,
 
   // Report hooks
-  useGeneratePayrollReportMutation,
   useSendPayrollToAccountantMutation,
 
   // Auto-generation hooks
