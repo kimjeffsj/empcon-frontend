@@ -9,6 +9,9 @@ import {
   EmployeePayrollSummary,
   PayrollBatchCalculation,
   ApiResponse,
+  Payslip,
+  GetPayslipsParams,
+  BulkUploadPayslipFilesResponse,
 } from "@empcon/types";
 import { baseApi } from "./baseApi";
 
@@ -133,6 +136,83 @@ export const payrollApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: "Payroll", id: "PAYSLIPS" }],
     }),
 
+    /**
+     * Get payslips with filtering
+     * For employees: automatically filtered to show only their own payslips
+     * For managers: can view all payslips
+     */
+    getPayslips: builder.query<Payslip[], GetPayslipsParams | void>({
+      query: (params) => ({
+        url: '/payroll/payslips',
+        params,
+      }),
+      providesTags: ['Payroll'],
+    }),
+
+    /**
+     * Get specific employee's payslips
+     * Employees can only view their own, managers can view any
+     */
+    getEmployeePayslips: builder.query<Payslip[], string>({
+      query: (employeeId) => `/payroll/employee/${employeeId}/payslips`,
+      providesTags: (result, error, employeeId) => [
+        { type: 'Payroll', id: employeeId },
+      ],
+    }),
+
+    /**
+     * Get single payslip by ID
+     */
+    getPayslipById: builder.query<Payslip, string>({
+      query: (id) => `/payroll/payslips/${id}`,
+      providesTags: (result, error, id) => [{ type: 'Payroll', id }],
+    }),
+
+    /**
+     * Download payslip PDF file
+     * Employees can only download their own, managers can download any
+     * @returns PDF file as Blob
+     * Usage: Use useLazyDownloadPayslipQuery for button click triggers
+     */
+    downloadPayslip: builder.query<Blob, string>({
+      query: (id) => ({
+        url: `/payroll/payslips/${id}/download`,
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
+
+    // Reports
+    /**
+     * Generate Excel payroll report for accountant (Manager only)
+     * @returns Excel file as Blob
+     */
+    generatePayrollReport: builder.mutation<Blob, { payPeriodId: string }>({
+      query: ({ payPeriodId }) => ({
+        url: '/payroll/reports/generate',
+        method: 'POST',
+        body: { payPeriodId },
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
+
+    /**
+     * Bulk upload payslip PDF files (Manager only)
+     * @param payPeriodId - Pay period ID
+     * @param formData - FormData containing multiple PDF files
+     * @returns Upload result with success/failed counts
+     */
+    bulkUploadPayslips: builder.mutation<
+      BulkUploadPayslipFilesResponse,
+      { payPeriodId: string; formData: FormData }
+    >({
+      query: ({ payPeriodId, formData }) => ({
+        url: `/payroll/periods/${payPeriodId}/upload-bulk`,
+        method: 'POST',
+        body: formData,
+      }),
+      invalidatesTags: ['Payroll'],
+    }),
+
     // Email Integration
     sendPayrollToAccountant: builder.mutation<
       { message: string },
@@ -207,8 +287,14 @@ export const {
 
   // Payslip hooks
   useGeneratePayslipMutation,
+  useGetPayslipsQuery,
+  useGetEmployeePayslipsQuery,
+  useGetPayslipByIdQuery,
+  useLazyDownloadPayslipQuery,
 
   // Report hooks
+  useGeneratePayrollReportMutation,
+  useBulkUploadPayslipsMutation,
   useSendPayrollToAccountantMutation,
 
   // Auto-generation hooks

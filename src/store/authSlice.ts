@@ -82,4 +82,10 @@ export const {
   tokenRefreshSuccess,
   tokenRefreshFailed
 } = authSlice.actions
+
+// Selectors
+export const selectCurrentUser = (state: { auth: AuthState }) => state.auth.user
+export const selectUserRole = (state: { auth: AuthState }) => state.auth.user?.role
+export const selectIsAuthenticated = (state: { auth: AuthState }) => state.auth.isAuthenticated
+
 export default authSlice.reducer
