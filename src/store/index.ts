@@ -1,42 +1,52 @@
-import { configureStore, combineReducers } from '@reduxjs/toolkit'
-import { setupListeners } from '@reduxjs/toolkit/query'
-import { persistStore, persistReducer } from 'redux-persist'
-import storage from 'redux-persist/lib/storage'
-import authSlice from './authSlice'
-import payrollSlice from './payrollSlice'
-import { baseApi } from './api/baseApi'
+import { configureStore, combineReducers } from "@reduxjs/toolkit";
+import { setupListeners } from "@reduxjs/toolkit/query";
+import { persistStore, persistReducer } from "redux-persist";
+import storage from "redux-persist/lib/storage";
+import authSlice from "./authSlice";
+import payrollSlice from "./payrollSlice";
+import { baseApi } from "./api/baseApi";
 
 // Persist configuration
 const persistConfig = {
-  key: 'empcon-auth',
+  key: "empcon-auth",
   storage,
-  whitelist: ['auth'], // Only persist auth state
+  whitelist: ["auth"], // Only persist auth state
   version: 1,
-}
+};
 
 // Combine reducers
 const rootReducer = combineReducers({
   auth: authSlice,
   payroll: payrollSlice,
   [baseApi.reducerPath]: baseApi.reducer,
-})
+});
 
 // Create persisted reducer
-const persistedReducer = persistReducer(persistConfig, rootReducer)
+const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 export const store = configureStore({
   reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
+        ignoredActions: [
+          "persist/PERSIST",
+          "persist/REHYDRATE",
+          "api/executeQuery/pending",
+          "api/executeQuery/fulfilled",
+          "api/executeQuery/rejected",
+          "api/executeMutation/pending",
+          "api/executeMutation/fulfilled",
+          "api/executeMutation/rejected",
+        ],
+        ignoredPaths: ["api.mutations", "api.queries"],
       },
     }).concat(baseApi.middleware),
-})
+});
 
-export const persistor = persistStore(store)
+export const persistor = persistStore(store);
 
-setupListeners(store.dispatch)
+setupListeners(store.dispatch);
 
-export type RootState = ReturnType<typeof store.getState>
-export type AppDispatch = typeof store.dispatch
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
