@@ -25,7 +25,8 @@ export const PayslipUploadCard = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch pay periods
-  const { data: payPeriods, isLoading: isLoadingPeriods } = useGetPayPeriodsQuery();
+  const { data: payPeriodsData, isLoading: isLoadingPeriods } = useGetPayPeriodsQuery({});
+  const payPeriods = payPeriodsData?.data || [];
 
   // Upload mutation
   const [uploadPayslips, { isLoading: isUploading }] = useBulkUploadPayslipsMutation();

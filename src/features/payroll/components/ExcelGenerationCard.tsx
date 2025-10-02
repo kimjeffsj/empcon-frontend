@@ -21,7 +21,8 @@ export const ExcelGenerationCard = () => {
   const [selectedPeriodId, setSelectedPeriodId] = useState<string>('');
 
   // Fetch pay periods
-  const { data: payPeriods, isLoading: isLoadingPeriods } = useGetPayPeriodsQuery();
+  const { data: payPeriodsData, isLoading: isLoadingPeriods } = useGetPayPeriodsQuery({});
+  const payPeriods = payPeriodsData?.data || [];
 
   // Generate Excel mutation
   const [generateReport, { isLoading: isGenerating }] = useGeneratePayrollReportMutation();

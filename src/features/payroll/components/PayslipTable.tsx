@@ -27,7 +27,8 @@ export const PayslipTable = () => {
   const [selectedPeriodId, setSelectedPeriodId] = useState<string>('');
 
   // Fetch pay periods
-  const { data: payPeriods, isLoading: isLoadingPeriods } = useGetPayPeriodsQuery();
+  const { data: payPeriodsData, isLoading: isLoadingPeriods } = useGetPayPeriodsQuery({});
+  const payPeriods = payPeriodsData?.data || [];
 
   // Fetch payslips for selected period
   const { data: payslips, isLoading: isLoadingPayslips } = useGetPayslipsQuery(

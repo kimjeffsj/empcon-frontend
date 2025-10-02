@@ -20,13 +20,13 @@ export const PayrollAdminDashboard = () => {
 
   // Protect admin-only route
   useEffect(() => {
-    if (userRole && userRole !== UserRole.ADMIN && userRole !== UserRole.MANAGER) {
+    if (userRole && userRole !== "ADMIN" && userRole !== "MANAGER") {
       router.push('/payroll/employee');
     }
   }, [userRole, router]);
 
   // Show nothing while checking permissions
-  if (!userRole || (userRole !== UserRole.ADMIN && userRole !== UserRole.MANAGER)) {
+  if (!userRole || (userRole !== "ADMIN" && userRole !== "MANAGER")) {
     return null;
   }
 
