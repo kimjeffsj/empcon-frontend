@@ -74,7 +74,7 @@ export const EmployeeList = ({
     limit: 100,
   });
 
-  const employees = useMemo(() => employeesData?.employees || [], [employeesData?.employees]);
+  const employees = useMemo(() => employeesData?.data || [], [employeesData?.data]);
   const filteredEmployees = employees;
 
   const departments = useMemo(() => {

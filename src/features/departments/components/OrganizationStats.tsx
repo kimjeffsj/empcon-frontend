@@ -2,8 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Building, Users, Briefcase } from "lucide-react";
-import { type DepartmentResponse } from "@/store/api/departmentsApi";
-import { type PositionResponse } from "@/store/api/positionsApi";
+import { type DepartmentResponse, type PositionResponse } from "@empcon/types";
 
 interface OrganizationStatsProps {
   departments: DepartmentResponse[];

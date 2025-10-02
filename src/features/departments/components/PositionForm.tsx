@@ -6,8 +6,7 @@ import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { Textarea } from '@/shared/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
-import { type PositionResponse } from '@/store/api/positionsApi'
-import { type DepartmentResponse } from '@/store/api/departmentsApi'
+import { type PositionResponse, type DepartmentResponse } from '@empcon/types'
 
 interface PositionFormProps {
   position?: PositionResponse | null

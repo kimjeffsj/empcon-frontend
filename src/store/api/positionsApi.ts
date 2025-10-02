@@ -1,20 +1,10 @@
-import { ApiResponse, CreatePositionRequest, UpdatePositionRequest } from "@empcon/types";
+import {
+  ApiResponse,
+  CreatePositionRequest,
+  UpdatePositionRequest,
+  PositionResponse
+} from "@empcon/types";
 import { baseApi } from "./baseApi";
-
-// API 문서 기준 Position Response 타입
-export interface PositionResponse {
-  id: string;
-  title: string;
-  departmentId: string;
-  description: string | null;
-  employeeCount: number;
-  createdAt: string;
-  updatedAt: string;
-  department: {
-    id: string;
-    name: string;
-  };
-}
 
 export const positionsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({

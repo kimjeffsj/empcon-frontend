@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { type DepartmentResponse } from "@/store/api/departmentsApi";
+import { type DepartmentResponse } from "@empcon/types";
 import { useGetEmployeesQuery } from "@/store/api/employeesApi";
 
 interface DepartmentFormProps {
@@ -44,7 +44,7 @@ export function DepartmentForm({
     page: 1,
     limit: 100,
   });
-  const employees = employeesData?.employees || [];
+  const employees = employeesData?.data || [];
 
   // Filter employees to show only those with MANAGER role
   const managerCandidates = employees.filter((employee) => {

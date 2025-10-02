@@ -275,7 +275,7 @@ export const ScheduleForm = ({
     setEndTimeInput("");
   }, [onClose, stableReset]);
 
-  const employees = employeesData?.employees || [];
+  const employees = employeesData?.data || [];
   const hasConflict = conflictValidationState.hasConflict;
 
   return (

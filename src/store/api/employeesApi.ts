@@ -2,8 +2,8 @@ import {
   ApiResponse,
   CreateEmployeeRequest,
   EmployeeListRequest,
-  EmployeeListResponse,
   EmployeeResponse,
+  PaginatedResponse,
   UpdateEmployeeRequest,
 } from "@empcon/types";
 import { baseApi } from "./baseApi";
@@ -12,7 +12,7 @@ export const employeesApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // GET /api/employees - 직원 목록 조회 (검색, 필터링, 페이지네이션)
     getEmployees: builder.query<
-      EmployeeListResponse,
+      PaginatedResponse<EmployeeResponse>,
       Partial<EmployeeListRequest>
     >({
       query: (params = {}) => ({
@@ -23,7 +23,19 @@ export const employeesApi = baseApi.injectEndpoints({
           ...params,
         },
       }),
-      transformResponse: (response: EmployeeListResponse) => response,
+      transformResponse: (response: {
+        success: boolean;
+        data: EmployeeResponse[];
+        pagination: {
+          page: number;
+          limit: number;
+          total: number;
+          totalPages: number;
+        };
+      }) => ({
+        data: response.data || [],
+        pagination: response.pagination,
+      }),
       providesTags: ["Employee"],
     }),
 
@@ -32,7 +44,7 @@ export const employeesApi = baseApi.injectEndpoints({
       query: (id) => `/employees/${id}`,
       transformResponse: (response: ApiResponse<EmployeeResponse>) =>
         response.data!,
-      providesTags: (result, error, id) => [{ type: "Employee", id }],
+      providesTags: (_result, _error, id) => [{ type: "Employee", id }],
     }),
 
     // POST /api/employees - 직원 생성
@@ -59,7 +71,7 @@ export const employeesApi = baseApi.injectEndpoints({
       }),
       transformResponse: (response: ApiResponse<EmployeeResponse>) =>
         response.data!,
-      invalidatesTags: (result, error, { id }) => [
+      invalidatesTags: (_result, _error, { id }) => [
         "Employee",
         { type: "Employee", id },
       ],

@@ -1,21 +1,10 @@
-import { ApiResponse, CreateDepartmentRequest, UpdateDepartmentRequest } from "@empcon/types";
+import {
+  ApiResponse,
+  CreateDepartmentRequest,
+  UpdateDepartmentRequest,
+  DepartmentResponse
+} from "@empcon/types";
 import { baseApi } from "./baseApi";
-
-// API 문서 기준 Department Response 타입
-export interface DepartmentResponse {
-  id: string;
-  name: string;
-  description: string | null;
-  managerId: string | null;
-  employeeCount: number;
-  createdAt: string;
-  updatedAt: string;
-  manager?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-  } | null;
-}
 
 export const departmentsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({

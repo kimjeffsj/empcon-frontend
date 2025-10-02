@@ -23,8 +23,8 @@ import {
   useCreateDepartmentMutation,
   useUpdateDepartmentMutation,
   useDeleteDepartmentMutation,
-  type DepartmentResponse,
 } from "@/store/api/departmentsApi";
+import { type DepartmentResponse } from "@empcon/types";
 import { DepartmentForm } from "./DepartmentForm";
 import { toast } from "sonner";
 

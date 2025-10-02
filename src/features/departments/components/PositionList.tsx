@@ -24,9 +24,8 @@ import {
   useCreatePositionMutation,
   useUpdatePositionMutation,
   useDeletePositionMutation,
-  type PositionResponse,
 } from "@/store/api/positionsApi";
-import { type DepartmentResponse } from "@/store/api/departmentsApi";
+import { type PositionResponse, type DepartmentResponse } from "@empcon/types";
 import { PositionForm } from "./PositionForm";
 import { toast } from "sonner";
 
