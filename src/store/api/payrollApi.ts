@@ -155,6 +155,8 @@ export const payrollApi = baseApi.injectEndpoints({
      */
     getEmployeePayslips: builder.query<Payslip[], string>({
       query: (employeeId) => `/payroll/employee/${employeeId}/payslips`,
+      transformResponse: (response: ApiResponse<{ payslips: Payslip[] }>) =>
+        response.data?.payslips || [],
       providesTags: (result, error, employeeId) => [
         { type: 'Payroll', id: employeeId },
       ],
