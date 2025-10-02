@@ -20,7 +20,8 @@ export const payrollApi = baseApi.injectEndpoints({
     // Pay Period Management
     getCurrentPayPeriod: builder.query<GetCurrentPayPeriodResponse, void>({
       query: () => "/payroll/periods/current",
-      transformResponse: (response: ApiResponse<GetCurrentPayPeriodResponse>) => response.data!,
+      transformResponse: (response: ApiResponse<GetCurrentPayPeriodResponse>) =>
+        response.data!,
       providesTags: [{ type: "Payroll", id: "CURRENT_PERIOD" }],
     }),
 
@@ -29,7 +30,8 @@ export const payrollApi = baseApi.injectEndpoints({
         url: "/payroll/periods",
         params,
       }),
-      transformResponse: (response: ApiResponse<GetPayPeriodsResponse>) => response.data!,
+      transformResponse: (response: ApiResponse<GetPayPeriodsResponse>) =>
+        response.data!,
       providesTags: (result) => [
         ...(result?.data?.map?.(({ id }) => ({
           type: "Payroll" as const,
@@ -100,7 +102,8 @@ export const payrollApi = baseApi.injectEndpoints({
       { payPeriodId: string }
     >({
       query: ({ payPeriodId }) => `/payroll/periods/${payPeriodId}/summary`,
-      transformResponse: (response: ApiResponse<EmployeePayrollSummary[]>) => response.data!,
+      transformResponse: (response: ApiResponse<EmployeePayrollSummary[]>) =>
+        response.data!,
       providesTags: [{ type: "Payroll", id: "SUMMARY" }],
     }),
 
@@ -112,7 +115,8 @@ export const payrollApi = baseApi.injectEndpoints({
         url: `/payroll/employee/${employeeId}/summary`,
         params: payPeriodId ? { payPeriodId } : {},
       }),
-      transformResponse: (response: ApiResponse<EmployeePayrollSummary>) => response.data!,
+      transformResponse: (response: ApiResponse<EmployeePayrollSummary>) =>
+        response.data!,
       providesTags: (result, error, { employeeId, payPeriodId }) => [
         {
           type: "Payroll",
@@ -141,12 +145,12 @@ export const payrollApi = baseApi.injectEndpoints({
      * For employees: automatically filtered to show only their own payslips
      * For managers: can view all payslips
      */
-    getPayslips: builder.query<Payslip[], GetPayslipsParams | void>({
+    getPayslips: builder.query<Payslip[], GetPayslipsParams | undefined>({
       query: (params) => ({
-        url: '/payroll/payslips',
+        url: "/payroll/payslips",
         params,
       }),
-      providesTags: ['Payroll'],
+      providesTags: ["Payroll"],
     }),
 
     /**
@@ -158,7 +162,7 @@ export const payrollApi = baseApi.injectEndpoints({
       transformResponse: (response: ApiResponse<{ payslips: Payslip[] }>) =>
         response.data?.payslips || [],
       providesTags: (result, error, employeeId) => [
-        { type: 'Payroll', id: employeeId },
+        { type: "Payroll", id: employeeId },
       ],
     }),
 
@@ -167,7 +171,7 @@ export const payrollApi = baseApi.injectEndpoints({
      */
     getPayslipById: builder.query<Payslip, string>({
       query: (id) => `/payroll/payslips/${id}`,
-      providesTags: (result, error, id) => [{ type: 'Payroll', id }],
+      providesTags: (result, error, id) => [{ type: "Payroll", id }],
     }),
 
     /**
@@ -190,8 +194,8 @@ export const payrollApi = baseApi.injectEndpoints({
      */
     generatePayrollReport: builder.mutation<Blob, { payPeriodId: string }>({
       query: ({ payPeriodId }) => ({
-        url: '/payroll/reports/generate',
-        method: 'POST',
+        url: "/payroll/reports/generate",
+        method: "POST",
         body: { payPeriodId },
         responseHandler: (response) => response.blob(),
       }),
@@ -209,10 +213,10 @@ export const payrollApi = baseApi.injectEndpoints({
     >({
       query: ({ payPeriodId, formData }) => ({
         url: `/payroll/periods/${payPeriodId}/upload-bulk`,
-        method: 'POST',
+        method: "POST",
         body: formData,
       }),
-      invalidatesTags: ['Payroll'],
+      invalidatesTags: ["Payroll"],
     }),
 
     // Email Integration
@@ -229,16 +233,14 @@ export const payrollApi = baseApi.injectEndpoints({
     }),
 
     // Auto-Generation
-    generateCompletedPeriod: builder.mutation<
-      CreatePayPeriodResponse,
-      void
-    >({
+    generateCompletedPeriod: builder.mutation<CreatePayPeriodResponse, void>({
       query: () => ({
         url: "/payroll/periods/generate-completed-period",
         method: "POST",
         body: {},
       }),
-      transformResponse: (response: ApiResponse<CreatePayPeriodResponse>) => response.data!,
+      transformResponse: (response: ApiResponse<CreatePayPeriodResponse>) =>
+        response.data!,
       invalidatesTags: [
         { type: "Payroll", id: "LIST" },
         { type: "Payroll", id: "CURRENT_PERIOD" },
@@ -252,23 +254,25 @@ export const payrollApi = baseApi.injectEndpoints({
         periodInfo?: {
           year: number;
           month: number;
-          period: 'A' | 'B';
+          period: "A" | "B";
           description: string;
         };
       },
       void
     >({
       query: () => "/payroll/periods/can-generate",
-      transformResponse: (response: ApiResponse<{
-        canGenerate: boolean;
-        reason: string;
-        periodInfo?: {
-          year: number;
-          month: number;
-          period: 'A' | 'B';
-          description: string;
-        };
-      }>) => response.data!,
+      transformResponse: (
+        response: ApiResponse<{
+          canGenerate: boolean;
+          reason: string;
+          periodInfo?: {
+            year: number;
+            month: number;
+            period: "A" | "B";
+            description: string;
+          };
+        }>
+      ) => response.data!,
       providesTags: [{ type: "Payroll", id: "CAN_GENERATE" }],
     }),
   }),
