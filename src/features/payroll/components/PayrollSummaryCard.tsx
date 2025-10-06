@@ -32,16 +32,16 @@ interface PayrollSummaryCardProps {
 
 const STATUS_COLORS: Record<PayPeriodStatus, string> = {
   OPEN: "bg-green-500/10 text-green-700 border-green-500/20",
-  PROCESSING: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20",
-  SENT_TO_ACCOUNTANT: "bg-blue-500/10 text-blue-700 border-blue-500/20",
-  COMPLETED: "bg-gray-500/10 text-gray-700 border-gray-500/20",
+  PROCESSING: "bg-blue-500/10 text-blue-700 border-blue-500/20",
+  COMPLETED: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20",
+  PAID: "bg-gray-500/10 text-gray-700 border-gray-500/20",
 };
 
 const STATUS_LABELS: Record<PayPeriodStatus, string> = {
   OPEN: "Open",
   PROCESSING: "Processing",
-  SENT_TO_ACCOUNTANT: "Sent to Accountant",
   COMPLETED: "Completed",
+  PAID: "Paid",
 };
 
 export function PayrollSummaryCard({
@@ -381,9 +381,9 @@ export function PayrollSummaryCard({
               <div className="text-center py-2">
                 <p className="text-sm text-muted-foreground">
                   {payPeriodStatus === "OPEN" && "Payroll period is still open"}
-                  {payPeriodStatus === "PROCESSING" && "Payroll is being processed"}
-                  {payPeriodStatus === "SENT_TO_ACCOUNTANT" &&
-                    "Payroll has been sent to accountant"}
+                  {payPeriodStatus === "PROCESSING" && "Payroll sent to accountant, waiting for PDFs"}
+                  {payPeriodStatus === "COMPLETED" && "Payslips uploaded, ready to be marked as paid"}
+                  {payPeriodStatus === "PAID" && "Payroll has been paid"}
                 </p>
               </div>
             )}

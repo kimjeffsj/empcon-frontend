@@ -128,17 +128,8 @@ export const payrollApi = baseApi.injectEndpoints({
     }),
 
     // Payslips
-    generatePayslip: builder.mutation<
-      { message: string; payslipId: string },
-      { employeeId: string; payPeriodId: string }
-    >({
-      query: ({ employeeId, payPeriodId }) => ({
-        url: "/payroll/payslips/generate",
-        method: "POST",
-        body: { employeeId, payPeriodId },
-      }),
-      invalidatesTags: [{ type: "Payroll", id: "PAYSLIPS" }],
-    }),
+    // Note: Payslip generation removed - handled via bulk upload from accountant
+    // Workflow: Calculate → Excel → Email → Accountant creates PDFs → Bulk Upload
 
     /**
      * Get payslips with filtering
@@ -292,7 +283,6 @@ export const {
   useGetEmployeePayrollSummaryQuery,
 
   // Payslip hooks
-  useGeneratePayslipMutation,
   useGetPayslipsQuery,
   useGetEmployeePayslipsQuery,
   useGetPayslipByIdQuery,

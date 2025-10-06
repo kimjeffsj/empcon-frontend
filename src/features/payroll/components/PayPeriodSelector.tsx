@@ -52,16 +52,16 @@ const MONTHS = [
 
 const STATUS_COLORS: Record<PayPeriodStatus, string> = {
   OPEN: "bg-green-500/10 text-green-700 border-green-500/20",
-  PROCESSING: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20",
-  SENT_TO_ACCOUNTANT: "bg-blue-500/10 text-blue-700 border-blue-500/20",
-  COMPLETED: "bg-gray-500/10 text-gray-700 border-gray-500/20",
+  PROCESSING: "bg-blue-500/10 text-blue-700 border-blue-500/20",
+  COMPLETED: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20",
+  PAID: "bg-gray-500/10 text-gray-700 border-gray-500/20",
 };
 
 const STATUS_LABELS: Record<PayPeriodStatus, string> = {
   OPEN: "Open",
-  PROCESSING: "Processing",
-  SENT_TO_ACCOUNTANT: "Sent to Accountant",
-  COMPLETED: "Completed",
+  PROCESSING: "Processing", // Email sent to accountant, waiting for PDFs
+  COMPLETED: "Completed", // PDFs uploaded, ready to mark as paid
+  PAID: "Paid",
 };
 
 export function PayPeriodSelector({
