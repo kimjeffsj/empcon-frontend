@@ -5,7 +5,7 @@
  * Context: Canadian localization (CAD currency, English labels)
  */
 
-import { Payslip } from '@empcon/types';
+import { Payslip, PayslipSummary } from '@empcon/types';
 
 /**
  * Format amount as Canadian dollar currency
@@ -145,4 +145,96 @@ export const formatPeriodDisplay = (payslip: Payslip): string => {
   const period = extractPeriod(payslip);
 
   return `${monthYear} - ${period}`;
+};
+
+/**
+ * Parse payPeriod string format "YYYY-MM-P" into components
+ * @param payPeriodString - Pay period string (e.g., "2024-01-A")
+ * @returns Object with year, month, and period components
+ *
+ * @example
+ * parsePayPeriodString("2024-01-A") // { year: "2024", month: "01", period: "A" }
+ * parsePayPeriodString("invalid") // { year: "-", month: "-", period: "-" }
+ */
+export const parsePayPeriodString = (
+  payPeriodString: string
+): { year: string; month: string; period: string } => {
+  if (!payPeriodString) return { year: '-', month: '-', period: '-' };
+
+  const parts = payPeriodString.split('-');
+  if (parts.length !== 3) return { year: '-', month: '-', period: '-' };
+
+  return {
+    year: parts[0],
+    month: parts[1],
+    period: parts[2],
+  };
+};
+
+/**
+ * Get month name from payPeriod string "YYYY-MM-P"
+ * @param payPeriodString - Pay period string (e.g., "2024-01-A")
+ * @returns Full month name (e.g., "January")
+ *
+ * @example
+ * getMonthNameFromPeriod("2024-01-A") // "January"
+ * getMonthNameFromPeriod("2024-12-B") // "December"
+ */
+export const getMonthNameFromPeriod = (payPeriodString: string): string => {
+  if (!payPeriodString) return '-';
+
+  const { year, month } = parsePayPeriodString(payPeriodString);
+  if (year === '-' || month === '-') return '-';
+
+  // Create date from year and month (use day 1 to get month name)
+  const date = new Date(`${year}-${month}-01`);
+  return date.toLocaleString('en-US', {
+    month: 'long',
+    timeZone: 'UTC',
+  });
+};
+
+/**
+ * Get year from payPeriod string "YYYY-MM-P"
+ * @param payPeriodString - Pay period string (e.g., "2024-01-A")
+ * @returns Year as string (e.g., "2024")
+ *
+ * @example
+ * getYearFromPeriod("2024-01-A") // "2024"
+ */
+export const getYearFromPeriod = (payPeriodString: string): string => {
+  if (!payPeriodString) return '-';
+
+  const { year } = parsePayPeriodString(payPeriodString);
+  return year;
+};
+
+/**
+ * Get period (A or B) from payPeriod string "YYYY-MM-P"
+ * @param payPeriodString - Pay period string (e.g., "2024-01-A")
+ * @returns Period character ("A", "B", or "-")
+ *
+ * @example
+ * getPeriodFromString("2024-01-A") // "A"
+ * getPeriodFromString("2024-01-B") // "B"
+ */
+export const getPeriodFromString = (payPeriodString: string): string => {
+  if (!payPeriodString) return '-';
+
+  const { period } = parsePayPeriodString(payPeriodString);
+  return period;
+};
+
+/**
+ * Calculate total hours for PayslipSummary (which already has totalHours)
+ * @param payslip - PayslipSummary object
+ * @returns Total hours
+ *
+ * @example
+ * calculateTotalHoursFromSummary({ totalHours: 80 }) // 80
+ */
+export const calculateTotalHoursFromSummary = (
+  payslip: PayslipSummary
+): number => {
+  return payslip.totalHours ?? 0;
 };

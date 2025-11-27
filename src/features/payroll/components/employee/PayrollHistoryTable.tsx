@@ -21,19 +21,19 @@ import {
 import { Button } from '@/shared/ui/button';
 import { Badge } from '@/shared/ui/badge';
 import { Download, FileText } from 'lucide-react';
-import { Payslip } from '@empcon/types';
+import { PayslipSummary } from '@empcon/types';
 import {
   formatCurrency,
   formatHours,
-  getMonthName,
-  getYear,
-  extractPeriod,
-  calculateTotalHours,
+  getMonthNameFromPeriod,
+  getYearFromPeriod,
+  getPeriodFromString,
+  calculateTotalHoursFromSummary,
 } from '../../utils/formatters';
 
 interface PayrollHistoryTableProps {
   /** Array of payslips to display */
-  payslips: Payslip[];
+  payslips: PayslipSummary[];
 
   /** Download handler function */
   onDownload: (payslipId: string) => Promise<void>;
@@ -83,10 +83,10 @@ export const PayrollHistoryTable = ({
         <TableBody>
           {payslips.map((payslip) => {
             const hasFile = !!payslip.filePath;
-            const month = getMonthName(payslip.payPeriod?.startDate || '');
-            const year = getYear(payslip.payPeriod?.startDate || '');
-            const period = extractPeriod(payslip);
-            const totalHours = calculateTotalHours(payslip);
+            const month = getMonthNameFromPeriod(payslip.payPeriod);
+            const year = getYearFromPeriod(payslip.payPeriod);
+            const period = getPeriodFromString(payslip.payPeriod);
+            const totalHours = calculateTotalHoursFromSummary(payslip);
 
             return (
               <TableRow key={payslip.id}>

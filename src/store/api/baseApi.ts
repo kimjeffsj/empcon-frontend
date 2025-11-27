@@ -1,22 +1,68 @@
-import { createApi, fetchBaseQuery, BaseQueryFn, FetchArgs, FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
+import {
+  createApi,
+  fetchBaseQuery,
+  BaseQueryFn,
+  FetchArgs,
+  FetchBaseQueryError,
+} from "@reduxjs/toolkit/query/react";
 import { RootState } from "@/store";
-import { setTokenRefreshing, tokenRefreshSuccess, tokenRefreshFailed } from "@/store/authSlice";
+import {
+  setTokenRefreshing,
+  tokenRefreshSuccess,
+  tokenRefreshFailed,
+} from "@/store/authSlice";
 
-const baseQuery = fetchBaseQuery({
-  baseUrl: "http://localhost:5002/api",
+const rawBaseQuery = fetchBaseQuery({
+  baseUrl: process.env.NEXT_PUBLIC_API_URL ?? "/api",
   credentials: "include", // Enable cookie sending
-  prepareHeaders: (headers) => {
-    headers.set("content-type", "application/json");
-    return headers;
-  },
 });
 
+const baseQuery: BaseQueryFn<
+  string | FetchArgs,
+  unknown,
+  FetchBaseQueryError
+> = async (args, api, extraOptions) => {
+  let adjustedArgs = args;
+
+  if (typeof args === "object" && args !== null && !(args instanceof Array)) {
+    const fetchArgs = { ...args } as FetchArgs;
+    const body = (fetchArgs as FetchArgs).body;
+
+    if (body instanceof FormData) {
+      if (fetchArgs.headers) {
+        const headers = new Headers(fetchArgs.headers as HeadersInit);
+        headers.delete("content-type");
+        fetchArgs.headers = headers;
+      }
+    } else if (
+      body !== undefined &&
+      body !== null &&
+      typeof body !== "string" &&
+      !(body instanceof Blob) &&
+      !(body instanceof ArrayBuffer) &&
+      !(body instanceof URLSearchParams)
+    ) {
+      const headers = new Headers(
+        (fetchArgs.headers as HeadersInit) ?? undefined
+      );
+      if (!headers.has("content-type")) {
+        headers.set("content-type", "application/json");
+      }
+      fetchArgs.headers = headers;
+    }
+
+    adjustedArgs = fetchArgs;
+  }
+
+  return rawBaseQuery(adjustedArgs, api, extraOptions);
+};
+
 // Custom baseQuery with automatic token refresh
-const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
-  args,
-  api,
-  extraOptions
-) => {
+const baseQueryWithReauth: BaseQueryFn<
+  string | FetchArgs,
+  unknown,
+  FetchBaseQueryError
+> = async (args, api, extraOptions) => {
   // Try the original request
   let result = await baseQuery(args, api, extraOptions);
 
@@ -27,7 +73,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
     // Avoid multiple simultaneous refresh attempts
     if (state.auth.isRefreshing) {
       // If already refreshing, wait and retry the original request
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       return await baseQuery(args, api, extraOptions);
     }
 
@@ -38,8 +84,8 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
       // Attempt to refresh the token
       const refreshResult = await baseQuery(
         {
-          url: '/auth/refresh',
-          method: 'POST',
+          url: "/auth/refresh",
+          method: "POST",
           body: {},
         },
         api,
@@ -57,18 +103,24 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
         api.dispatch(tokenRefreshFailed());
 
         // Only redirect to login if not on login page
-        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-          window.location.href = '/login';
+        if (
+          typeof window !== "undefined" &&
+          window.location.pathname !== "/login"
+        ) {
+          window.location.href = "/login";
         }
       }
     } catch (error) {
       // Token refresh failed - preserve user data but clear auth
-      console.warn('Token refresh failed:', error);
+      console.warn("Token refresh failed:", error);
       api.dispatch(tokenRefreshFailed());
 
       // Only redirect to login if not on login page
-      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      if (
+        typeof window !== "undefined" &&
+        window.location.pathname !== "/login"
+      ) {
+        window.location.href = "/login";
       }
     }
   }

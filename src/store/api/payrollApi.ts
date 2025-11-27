@@ -10,6 +10,7 @@ import {
   PayrollBatchCalculation,
   ApiResponse,
   Payslip,
+  PayslipSummary,
   GetPayslipsParams,
   BulkUploadPayslipFilesResponse,
 } from "@empcon/types";
@@ -148,10 +149,10 @@ export const payrollApi = baseApi.injectEndpoints({
      * Get specific employee's payslips
      * Employees can only view their own, managers can view any
      */
-    getEmployeePayslips: builder.query<Payslip[], string>({
+    getEmployeePayslips: builder.query<PayslipSummary[], string>({
       query: (employeeId) => `/payroll/employee/${employeeId}/payslips`,
-      transformResponse: (response: ApiResponse<{ payslips: Payslip[] }>) =>
-        response.data?.payslips || [],
+      transformResponse: (response: ApiResponse<PayslipSummary[]>) =>
+        response.data || [],
       providesTags: (result, error, employeeId) => [
         { type: "Payroll", id: employeeId },
       ],
@@ -207,6 +208,8 @@ export const payrollApi = baseApi.injectEndpoints({
         method: "POST",
         body: formData,
       }),
+      transformResponse: (response: ApiResponse<BulkUploadPayslipFilesResponse>) =>
+        response.data!,
       invalidatesTags: ["Payroll"],
     }),
 
