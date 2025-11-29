@@ -29,55 +29,115 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/shared/ui/sidebar";
+import { FEATURES, FeatureMenuItem } from "@/config/features";
 
-const ADMIN_MENU_ITEMS = [
-  { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/employees", label: "Employees", icon: Users },
+const ADMIN_MENU_ITEMS: FeatureMenuItem[] = [
+  {
+    href: "/admin/dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    href: "/admin/employees",
+    label: "Employees",
+    icon: Users,
+    feature: "EMPLOYEES",
+  },
   {
     href: "/admin/departments",
     label: "Departments & Positions",
     icon: Building,
+    feature: "DEPARTMENTS",
   },
-  { href: "/admin/schedules", label: "Schedules", icon: Calendar },
-  { href: "/admin/timeclocks", label: "Time Clocks", icon: Clock },
-  { href: "/admin/leaves", label: "Leaves", icon: FileText },
-  { href: "/admin/payroll", label: "Payroll", icon: DollarSign },
-  { href: "/admin/reports", label: "Reports", icon: BarChart3 },
+  {
+    href: "/admin/schedules",
+    label: "Schedules",
+    icon: Calendar,
+    feature: "SCHEDULES",
+  },
+  {
+    href: "/admin/timeclocks",
+    label: "Time Clocks",
+    icon: Clock,
+    feature: "TIMECLOCKS",
+  },
+  {
+    href: "/admin/leaves",
+    label: "Leaves",
+    icon: FileText,
+    feature: "LEAVES",
+  },
+  {
+    href: "/admin/payroll",
+    label: "Payroll",
+    icon: DollarSign,
+    feature: "PAYROLL",
+  },
+  {
+    href: "/admin/reports",
+    label: "Reports",
+    icon: BarChart3,
+    feature: "REPORTS",
+  },
 ];
 
-const EMPLOYEE_MENU_ITEMS = [
-  { href: "/employee/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/employee/schedule", label: "My Schedule", icon: Calendar },
-  { href: "/employee/timeclock", label: "Time Clock", icon: Clock },
-  { href: "/employee/leaves", label: "Leave Requests", icon: FileText },
-  { href: "/employee/payroll", label: "Payroll", icon: DollarSign },
+const EMPLOYEE_MENU_ITEMS: FeatureMenuItem[] = [
+  {
+    href: "/employee/dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    href: "/employee/schedule",
+    label: "My Schedule",
+    icon: Calendar,
+    feature: "SCHEDULES",
+  },
+  {
+    href: "/employee/timeclock",
+    label: "Time Clock",
+    icon: Clock,
+    feature: "TIMECLOCKS",
+  },
+  {
+    href: "/employee/leaves",
+    label: "Leave Requests",
+    icon: FileText,
+    feature: "LEAVES",
+  },
+  {
+    href: "/employee/payroll",
+    label: "Payroll",
+    icon: DollarSign,
+    feature: "PAYROLL",
+  },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
   // Auth pages
-  '/login': 'Login',
-  '/': 'Welcome',
-  
-  // Admin pages  
-  '/admin/dashboard': 'Dashboard',
-  '/admin/employees': 'Employees',
-  '/admin/departments': 'Departments & Positions', 
-  '/admin/schedules': 'Schedules',
-  '/admin/timeclocks': 'Time Clocks',
-  '/admin/leaves': 'Leaves',
-  '/admin/payroll': 'Payroll', 
-  '/admin/reports': 'Reports',
-  
+  "/login": "Login",
+  "/": "Welcome",
+
+  // Admin pages
+  "/admin/dashboard": "Dashboard",
+  "/admin/employees": "Employees",
+  "/admin/departments": "Departments & Positions",
+  "/admin/schedules": "Schedules",
+  "/admin/timeclocks": "Time Clocks",
+  "/admin/leaves": "Leaves",
+  "/admin/payroll": "Payroll",
+  "/admin/reports": "Reports",
+
   // Employee pages
-  '/employee/dashboard': 'Dashboard',
-  '/employee/schedule': 'My Schedule',
-  '/employee/timeclock': 'Time Clock', 
-  '/employee/leaves': 'Leave Requests',
-  '/employee/payroll': 'Payroll',
+  "/employee/dashboard": "Dashboard",
+  "/employee/schedule": "My Schedule",
+  "/employee/timeclock": "Time Clock",
+  "/employee/leaves": "Leave Requests",
+  "/employee/payroll": "Payroll",
 };
 
 const getPageTitle = (pathname: string): string => {
-  return PAGE_TITLES[pathname] || 'Dashboard';
+  return PAGE_TITLES[pathname] || "Dashboard";
 };
 
 interface AppLayoutProps {
@@ -93,10 +153,12 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   if (!user) return <>{children}</>;
 
-  const menuItems =
+  const menuItems = (
     user.role === "ADMIN" || user.role === "MANAGER"
       ? ADMIN_MENU_ITEMS
-      : EMPLOYEE_MENU_ITEMS;
+      : EMPLOYEE_MENU_ITEMS
+  ).filter((item) => !item.feature || FEATURES[item.feature]);
+
   const isAdmin = user.role === "ADMIN" || user.role === "MANAGER";
 
   const handleLogout = async () => {
