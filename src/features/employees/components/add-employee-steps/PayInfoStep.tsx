@@ -122,7 +122,10 @@ export const PayInfoStep = ({
 
     // Only convert payRate when payRate field is being updated
     if (field === "payRate") {
-      const updateData = { ...newData, payRate: parsePayRate(value.toString()) };
+      const updateData = {
+        ...newData,
+        payRate: parsePayRate(value.toString()),
+      };
       onUpdate(updateData);
     } else {
       // For other fields, preserve existing payRate as number

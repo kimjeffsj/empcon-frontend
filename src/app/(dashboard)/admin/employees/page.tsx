@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { EmployeeList } from "@/features/employees/components/EmployeeList";
 import { AddEmployeeModal } from "@/features/employees/components/AddEmployeeModal";
-import { CreateEmployeeRequest, UpdateEmployeeRequest, EmployeeResponse } from "@empcon/types";
+import {
+  CreateEmployeeRequest,
+  UpdateEmployeeRequest,
+  EmployeeResponse,
+} from "@empcon/types";
 import {
   useCreateEmployeeMutation,
   useUpdateEmployeeMutation,
@@ -20,7 +24,8 @@ export default function EmployeesPage() {
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingEmployee, setEditingEmployee] = useState<EmployeeResponse | null>(null);
+  const [editingEmployee, setEditingEmployee] =
+    useState<EmployeeResponse | null>(null);
 
   // Mutations
   const [createEmployee] = useCreateEmployeeMutation();
@@ -32,7 +37,7 @@ export default function EmployeesPage() {
     try {
       await createEmployee(employeeData).unwrap();
       toast.success("Employee Added Successfully", {
-        description: `${employeeData.firstName} ${employeeData.lastName} has been added to the system.`,
+        description: `${employeeData.firstName} ${employeeData.lastName} has been added to the system. A temporary password was was sent to ${employeeData.email}.`,
       });
       setIsAddModalOpen(false);
     } catch {
@@ -92,7 +97,7 @@ export default function EmployeesPage() {
 
   return (
     <div className="container mx-auto py-6">
-      <EmployeeList 
+      <EmployeeList
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         departmentFilter={departmentFilter}
