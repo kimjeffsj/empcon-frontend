@@ -9,7 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@empcon/types": "^1.5.4",
+    "@empcon/types": "^1.5.5",
     "@hookform/resolvers": "^5.2.1",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -47,7 +47,7 @@
     "input-otp": "^1.4.2",
     "lucide-react": "^0.540.0",
     "moment": "^2.30.1",
-    "next": "15.5.0",
+    "next": "^15.5.7",
     "next-themes": "^0.4.6",
     "react": "19.1.0",
     "react-big-calendar": "^1.19.4",

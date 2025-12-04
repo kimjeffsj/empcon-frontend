@@ -120,25 +120,22 @@ export const PayInfoStep = ({
     const newData = { ...localData, [field]: value };
     setLocalData(newData);
 
-    // Only convert payRate when payRate field is being updated
-    if (field === "payRate") {
-      const updateData = {
-        ...newData,
-        payRate: parsePayRate(value.toString()),
-      };
-      onUpdate(updateData);
-    } else {
-      // For other fields, preserve existing payRate as number
-      const updateData = { ...newData, payRate: parsePayRate(newData.payRate) };
-      onUpdate(updateData);
-    }
+    // payRate는 문자열 그대로 전달 (숫자 변환은 최종 제출 시에만)
+    // 타입 호환을 위해 as unknown as number 사용
+    onUpdate({
+      ...newData,
+      payRate: newData.payRate as unknown as number,
+    });
   };
 
   // Reset payRate fields when payType changes
   const handlePayTypeChange = (payType: "HOURLY" | "SALARY") => {
     const newData = { ...localData, payType, payRate: "" };
     setLocalData(newData);
-    onUpdate({ ...newData, payRate: parsePayRate("") });
+    onUpdate({
+      ...newData,
+      payRate: newData.payRate as unknown as number,
+    });
   };
 
   // SIN format (000-000-000)
